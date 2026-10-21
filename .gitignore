@@ -1,0 +1,20 @@
+# Gradle
+.gradle/
+build/
+.kotlin/
+local.properties
+*.log
+captures/
+.externalNativeBuild/
+.cxx/
+*.aab
+*.apk
+output-metadata.json
+# IDE
+*.iml
+.idea/
+# Signing and secrets
+*.jks
+*.keystore
+google-services.json
+*.hprof
