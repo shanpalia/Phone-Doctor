@@ -10,6 +10,5 @@
         <item name="android:windowSplashScreenBackground">#F7FFFB</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_phone_doctor</item>
         <item name="android:windowSplashScreenBrandingImage">@drawable/ic_phone_doctor</item>
-        <item name="android:postSplashScreenTheme">@style/Theme.PhoneDoctor</item>
     </style>
 </resources>
