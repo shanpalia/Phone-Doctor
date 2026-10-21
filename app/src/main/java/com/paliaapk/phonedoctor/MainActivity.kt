@@ -464,9 +464,9 @@ private fun PhoneDoctorApp(context: Context) {
          }
          Spacer(Modifier.width(12.dp))
          Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(4.dp)) {
-          Text("More Games & Apps",fontSize=15.sp,fontWeight=FontWeight.Bold,color=DeepGreen)
-          Text("Explore apps and games from PaliaAPK HUB",fontSize=12.sp,color=Secondary)
-          Text("paliaapkhub.com",fontSize=12.sp,fontWeight=FontWeight.SemiBold,color=Mint)
+          Text("PaliaAPK HUB",fontSize=15.sp,fontWeight=FontWeight.Bold,color=DeepGreen)
+          Text("More Games & Apps",fontSize=12.sp,color=Secondary)
+          Text("Visit official website",fontSize=12.sp,fontWeight=FontWeight.SemiBold,color=Mint)
          }
          Icon(Icons.Default.OpenInNew,null,tint=Mint)
         }
@@ -478,7 +478,7 @@ private fun PhoneDoctorApp(context: Context) {
          Row(verticalAlignment=Alignment.CenterVertically) {
           Box(Modifier.size(42.dp).background(Color.White,RoundedCornerShape(12.dp)),contentAlignment=Alignment.Center){Icon(Icons.Default.SystemUpdate,null,tint=Mint,modifier=Modifier.size(26.dp))}
           Spacer(Modifier.width(10.dp))
-          Column(Modifier.weight(1f)) { Text("Official Version Check",fontSize=17.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen); Text("Check the latest app release from PaliaAPK HUB",fontSize=12.sp,color=Secondary) }
+          Column(Modifier.weight(1f)) { Text("PaliaAPK HUB",fontSize=17.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen); Text("Check the latest app version",fontSize=12.sp,color=Secondary) }
          }
          Row(verticalAlignment=Alignment.CenterVertically) {
           Icon(if(versionChecking) Icons.Default.Sync else if(versionStatus.startsWith("New version")) Icons.Default.SystemUpdate else Icons.Default.VerifiedUser,null,tint=Mint)
@@ -490,7 +490,6 @@ private fun PhoneDoctorApp(context: Context) {
           Spacer(Modifier.width(8.dp)); Text(if(versionChecking)"Checking Website…" else "Check for Updates")
          }
          if(latestVersion!=null && updateUrl!=null) Button(onClick={try{context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(updateUrl)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))}catch(_:Exception){}},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(14.dp),colors=ButtonDefaults.buttonColors(containerColor=DeepGreen)) { Icon(Icons.Default.Download,null); Spacer(Modifier.width(8.dp)); Text("Download Latest APK") }
-         Text("Update source: paliaapkhub.com/updates/updates.json",fontSize=10.sp,color=Secondary)
         }
        }
       }
