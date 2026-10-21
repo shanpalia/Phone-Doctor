@@ -17,6 +17,10 @@ import android.hardware.SensorManager
 import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.content.pm.PackageManager
+import android.Manifest
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
@@ -163,10 +167,77 @@ private fun openSystemPage(context: Context, page: String) {
 }
 
 @Composable
+private data class PermissionItem(val permission: String, val title: String, val reason: String)
+
+@Composable
+private fun PermissionSetupPage(item: PermissionItem?, onAllow: (String) -> Unit, onSkip: () -> Unit, onFinish: () -> Unit) {
+ Surface(modifier=Modifier.fillMaxSize(), color=Page) {
+  Column(Modifier.fillMaxSize().padding(24.dp),verticalArrangement=Arrangement.Center,horizontalAlignment=Alignment.CenterHorizontally) {
+   Image(painterResource(R.drawable.ic_phone_doctor),null,modifier=Modifier.size(92.dp))
+   Spacer(Modifier.height(18.dp))
+   Text("Phone Doctor Permissions",fontSize=24.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen)
+   Spacer(Modifier.height(8.dp))
+   Text("हर अनुमति अलग से समझकर Allow करें। अनुमति देना वैकल्पिक है; मना करने पर ऐप खुल सकता है, संबंधित जाँच उपलब्ध नहीं होगी।",fontSize=14.sp,color=Secondary)
+   Spacer(Modifier.height(24.dp))
+   if(item==null) {
+    Text("अनुमति सेटअप पूरा हुआ",fontSize=18.sp,fontWeight=FontWeight.Bold,color=DeepGreen)
+    Button(onClick=onFinish,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Mint)){Text("Phone Doctor खोलें")}
+   } else {
+    Card(colors=CardDefaults.cardColors(containerColor=Color.White),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,Border)) {
+     Column(Modifier.fillMaxWidth().padding(18.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
+      Text(item.title,fontSize=18.sp,fontWeight=FontWeight.Bold,color=DeepGreen)
+      Text(item.reason,fontSize=14.sp,color=Secondary)
+      Text("अनुमति ${item.title.lowercase()} जाँच सुविधा के लिए है। ऐप आपकी अनुमति के बिना इसे इस्तेमाल नहीं कर सकता।",fontSize=12.sp,color=Secondary)
+     }
+    }
+    Spacer(Modifier.height(14.dp))
+    Button(onClick={onAllow(item.permission)},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Mint)){Text("अनुमति दें")}
+    TextButton(onClick=onSkip,modifier=Modifier.fillMaxWidth()){Text("अभी छोड़ें")}
+    Text("आप बाद में Android Settings से अनुमति बदल सकते हैं।",fontSize=12.sp,color=Secondary)
+   }
+  }
+ }
+}
+
 private fun PhoneDoctorApp(context: Context) {
  var showSplash by remember { mutableStateOf(true) }
  LaunchedEffect(Unit) { delay(1500); showSplash = false }
  if (showSplash) { BrandingSplash(); return }
+ val permissionItems = remember {
+  buildList {
+   add(PermissionItem(Manifest.permission.CAMERA,"कैमरा","कैमरा हार्डवेयर जाँच के लिए।"))
+   add(PermissionItem(Manifest.permission.RECORD_AUDIO,"माइक्रोफोन","माइक्रोफोन की वैकल्पिक कार्यात्मक जाँच के लिए।"))
+   add(PermissionItem(Manifest.permission.ACCESS_FINE_LOCATION,"लोकेशन / GPS","GPS की वैकल्पिक जाँच के लिए; स्थान ऐप के सर्वर पर नहीं भेजा जाता।"))
+   if (Build.VERSION.SDK_INT >= 33) add(PermissionItem(Manifest.permission.POST_NOTIFICATIONS,"नोटिफिकेशन","स्कैन/ऐप अपडेट के नोटिफिकेशन दिखाने के लिए।"))
+  }
+ }
+ var permissionIndex by remember { mutableIntStateOf(0) }
+ var showPermissionSetup by remember { mutableStateOf(true) }
+ val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { _ ->
+  permissionIndex = (permissionIndex + 1).coerceAtMost(permissionItems.size)
+  if(permissionIndex >= permissionItems.size) showPermissionSetup = false
+ }
+ LaunchedEffect(permissionIndex, showPermissionSetup) {
+  if(showPermissionSetup && permissionIndex < permissionItems.size) {
+   val permission=permissionItems[permissionIndex].permission
+   if(context.checkSelfPermission(permission)==PackageManager.PERMISSION_GRANTED) {
+    permissionIndex++
+    if(permissionIndex >= permissionItems.size) showPermissionSetup=false
+   }
+  }
+ }
+ if(showPermissionSetup) {
+  PermissionSetupPage(
+   item=permissionItems.getOrNull(permissionIndex),
+   onAllow={ permissionLauncher.launch(it) },
+   onSkip={
+    permissionIndex++
+    if(permissionIndex >= permissionItems.size) showPermissionSetup=false
+   },
+   onFinish={showPermissionSetup=false}
+  )
+  return
+ }
  var selected by remember { mutableIntStateOf(0) }
  var refreshKey by remember { mutableIntStateOf(0) }
  var lastScan by remember { mutableStateOf("अभी स्कैन नहीं हुआ") }
