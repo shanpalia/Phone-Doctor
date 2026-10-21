@@ -165,84 +165,42 @@ private fun openSystemPage(context: Context, page: String) {
  catch (_: Exception) { context.startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
 }
 
-private data class PermissionItem(val permission: String, val title: String, val reason: String)
-
-@Composable
-private fun PermissionSetupPage(item: PermissionItem?, onAllow: (String) -> Unit, onSkip: () -> Unit, onFinish: () -> Unit) {
- Surface(modifier=Modifier.fillMaxSize(), color=Page) {
-  Column(Modifier.fillMaxSize().padding(24.dp),verticalArrangement=Arrangement.Center,horizontalAlignment=Alignment.CenterHorizontally) {
-   Image(painterResource(R.drawable.ic_phone_doctor),null,modifier=Modifier.size(92.dp))
-   Spacer(Modifier.height(18.dp))
-   Text("Phone Doctor Permissions",fontSize=24.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen)
-   Spacer(Modifier.height(8.dp))
-   Text("हर अनुमति अलग से समझकर Allow करें। अनुमति देना वैकल्पिक है; मना करने पर ऐप खुल सकता है, संबंधित जाँच उपलब्ध नहीं होगी।",fontSize=14.sp,color=Secondary)
-   Spacer(Modifier.height(24.dp))
-   if(item==null) {
-    Text("अनुमति सेटअप पूरा हुआ",fontSize=18.sp,fontWeight=FontWeight.Bold,color=DeepGreen)
-    Button(onClick=onFinish,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Mint)){Text("Phone Doctor खोलें")}
-   } else {
-    Card(colors=CardDefaults.cardColors(containerColor=Color.White),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,Border)) {
-     Column(Modifier.fillMaxWidth().padding(18.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
-      Text(item.title,fontSize=18.sp,fontWeight=FontWeight.Bold,color=DeepGreen)
-      Text(item.reason,fontSize=14.sp,color=Secondary)
-      Text("अनुमति ${item.title.lowercase()} जाँच सुविधा के लिए है। ऐप आपकी अनुमति के बिना इसे इस्तेमाल नहीं कर सकता।",fontSize=12.sp,color=Secondary)
-     }
-    }
-    Spacer(Modifier.height(14.dp))
-    Button(onClick={onAllow(item.permission)},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Mint)){Text("अनुमति दें")}
-    TextButton(onClick=onSkip,modifier=Modifier.fillMaxWidth()){Text("अभी छोड़ें")}
-    Text("आप बाद में Android Settings से अनुमति बदल सकते हैं।",fontSize=12.sp,color=Secondary)
-   }
-  }
- }
-}
+private data class PermissionItem(val permission: String)
 
 @Composable
 private fun PhoneDoctorApp(context: Context) {
  var showSplash by remember { mutableStateOf(true) }
  LaunchedEffect(Unit) { delay(1500); showSplash = false }
  if (showSplash) { BrandingSplash(); return }
+
  val permissionItems = remember {
   buildList {
-   add(PermissionItem(Manifest.permission.CAMERA,"कैमरा","कैमरा हार्डवेयर जाँच के लिए।"))
-   add(PermissionItem(Manifest.permission.RECORD_AUDIO,"माइक्रोफोन","माइक्रोफोन की वैकल्पिक कार्यात्मक जाँच के लिए।"))
-   add(PermissionItem(Manifest.permission.ACCESS_FINE_LOCATION,"लोकेशन / GPS","GPS की वैकल्पिक जाँच के लिए; स्थान ऐप के सर्वर पर नहीं भेजा जाता।"))
-   if (Build.VERSION.SDK_INT >= 33) add(PermissionItem(Manifest.permission.POST_NOTIFICATIONS,"नोटिफिकेशन","स्कैन/ऐप अपडेट के नोटिफिकेशन दिखाने के लिए।"))
+   add(PermissionItem(Manifest.permission.CAMERA))
+   add(PermissionItem(Manifest.permission.RECORD_AUDIO))
+   add(PermissionItem(Manifest.permission.ACCESS_FINE_LOCATION))
+   if (Build.VERSION.SDK_INT >= 33) add(PermissionItem(Manifest.permission.POST_NOTIFICATIONS))
   }
  }
  var permissionIndex by remember { mutableIntStateOf(0) }
- var showPermissionSetup by remember { mutableStateOf(true) }
  val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { _ ->
   permissionIndex = (permissionIndex + 1).coerceAtMost(permissionItems.size)
-  if(permissionIndex >= permissionItems.size) showPermissionSetup = false
  }
- LaunchedEffect(permissionIndex, showPermissionSetup) {
-  if(showPermissionSetup && permissionIndex < permissionItems.size) {
-   val permission=permissionItems[permissionIndex].permission
-   if(context.checkSelfPermission(permission)==PackageManager.PERMISSION_GRANTED) {
+ LaunchedEffect(permissionIndex, showSplash) {
+  if (!showSplash && permissionIndex < permissionItems.size) {
+   val permission = permissionItems[permissionIndex].permission
+   if (context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED) {
     permissionIndex++
-    if(permissionIndex >= permissionItems.size) showPermissionSetup=false
+   } else {
+    permissionLauncher.launch(permission)
    }
   }
  }
- if(showPermissionSetup) {
-  PermissionSetupPage(
-   item=permissionItems.getOrNull(permissionIndex),
-   onAllow={ permissionLauncher.launch(it) },
-   onSkip={
-    permissionIndex++
-    if(permissionIndex >= permissionItems.size) showPermissionSetup=false
-   },
-   onFinish={showPermissionSetup=false}
-  )
-  return
- }
  var selected by remember { mutableIntStateOf(0) }
  var refreshKey by remember { mutableIntStateOf(0) }
- var lastScan by remember { mutableStateOf("अभी स्कैन नहीं हुआ") }
+ var lastScan by remember { mutableStateOf("Not scanned yet") }
  var isScanning by remember { mutableStateOf(false) }
  var scanProgress by remember { mutableIntStateOf(0) }
- var versionStatus by remember { mutableStateOf("अपडेट जाँचने के लिए बटन दबाएँ") }
+ var versionStatus by remember { mutableStateOf("Tap Check Version to look for updates") }
  var latestVersion by remember { mutableStateOf<String?>(null) }
  var updateUrl by remember { mutableStateOf<String?>(null) }
  var versionChecking by remember { mutableStateOf(false) }
@@ -251,23 +209,23 @@ private fun PhoneDoctorApp(context: Context) {
   if (isScanning) return
   isScanning = true
   scanProgress = 0
-  lastScan = "डिवाइस की जाँच शुरू हो रही है…"
+  lastScan = "Starting device diagnostics…"
   scope.launch {
-   val stages = listOf("बैटरी की जानकारी पढ़ रहे हैं…", "RAM की उपलब्धता पढ़ रहे हैं…", "स्टोरेज का उपयोग जाँच रहे हैं…", "नेटवर्क और Android जानकारी अपडेट कर रहे हैं…")
+   val stages = listOf("Reading battery information…", "Checking available RAM…", "Checking storage usage…", "Refreshing network and Android information…")
    stages.forEachIndexed { index, stage ->
     lastScan = stage
     delay(500)
     refreshKey++
     scanProgress = (index + 1) * 25
    }
-   lastScan = "स्कैन पूरा • डिवाइस आँकड़े अपडेट हुए"
+   lastScan = "Scan complete • Device metrics refreshed"
    isScanning = false
   }
  }
  fun checkWebsiteVersion() {
   if (versionChecking) return
   versionChecking = true
-  versionStatus = "www.paliaapkhub.com से संस्करण जाँचा जा रहा है…"
+  versionStatus = "Checking version at www.paliaapkhub.com…"
   scope.launch {
    val result = withContext(Dispatchers.IO) {
     try {
@@ -298,7 +256,7 @@ private fun PhoneDoctorApp(context: Context) {
  MaterialTheme(colorScheme = lightColorScheme(primary=Mint, onPrimary=Color.White, background=Page, surface=Color.White, onSurface=DeepGreen, secondary=Secondary)) {
   Scaffold(containerColor=Page, bottomBar={
    NavigationBar(containerColor=Color.White, contentColor=DeepGreen) {
-    val labels=listOf("होम","स्कैन","टूल्स","रिपोर्ट","सेटिंग्स")
+    val labels=listOf("Home","Scan","Tools","Reports","Settings")
     val icons=listOf(Icons.Default.PhoneAndroid,Icons.Default.HealthAndSafety,Icons.Default.Build,Icons.Default.Assessment,Icons.Default.Settings)
     labels.forEachIndexed { i,label -> NavigationBarItem(selected=selected==i,onClick={
      selected=i
@@ -317,12 +275,12 @@ private fun PhoneDoctorApp(context: Context) {
       item { ActionCard("पूरी जाँच देखें","RAM, स्टोरेज, बैटरी और मैनुअल सुरक्षा जाँच",Icons.Default.HealthAndSafety){selected=1;startDeviceScan()} }
      }
      1 -> {
-      item { PageHeading("फोन स्कैन","हार्डवेयर, बैटरी, RAM, स्टोरेज और सुरक्षा जाँच") }
+      item { PageHeading("Device Scan","Hardware, battery, RAM, storage and security overview") }
       item {
        Card(colors=CardDefaults.cardColors(containerColor=Color.White),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,Border)) {
         Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-         Text("हार्डवेयर जाँच",fontWeight=FontWeight.Bold,color=DeepGreen,fontSize=16.sp)
-         Text("Android द्वारा रिपोर्ट किए गए hardware features और sensors की वास्तविक जाँच। इससे कैमरा/माइक का पूरा कार्यात्मक परीक्षण नहीं होता।",fontSize=12.sp,color=Secondary)
+         Text("Hardware Diagnostics",fontWeight=FontWeight.Bold,color=DeepGreen,fontSize=16.sp)
+         Text("Hardware features and sensors reported by Android. This does not fully test camera or microphone functionality.",fontSize=12.sp,color=Secondary)
          hardwareChecks(context).forEach { (name, result) ->
           Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
            Icon(Icons.Default.Memory,null,tint=Mint,modifier=Modifier.size(18.dp))
@@ -341,13 +299,13 @@ private fun PhoneDoctorApp(context: Context) {
           Icon(Icons.Default.Security,null,tint=Mint,modifier=Modifier.size(26.dp))
           Spacer(Modifier.width(8.dp))
           Column {
-           Text("Malware / वायरस सुरक्षा",fontWeight=FontWeight.Bold,color=DeepGreen,fontSize=16.sp)
-           Text("Google Play Protect या फोन की सुरक्षा सेटिंग में स्कैन खोलें।",fontSize=12.sp,color=Secondary)
+           Text("Malware & Virus Protection",fontWeight=FontWeight.Bold,color=DeepGreen,fontSize=16.sp)
+           Text("Run a scan with Google Play Protect or your phone security settings.",fontSize=12.sp,color=Secondary)
           }
          }
          Text("Android ऐप को दूसरे ऐप्स की निजी फाइलों और पूरे फोन को अपने-आप वायरस स्कैन करने की अनुमति नहीं देता। इसलिए यहाँ नकली 'साफ़' परिणाम नहीं दिखाया जाता।",fontSize=12.sp,color=Secondary)
          Button(onClick={openSecuritySettings(context)},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Mint)) {
-          Icon(Icons.Default.Security,null); Spacer(Modifier.width(8.dp)); Text("फोन की Security Settings खोलें")
+          Icon(Icons.Default.Security,null); Spacer(Modifier.width(8.dp)); Text("Open Security Settings")
          }
         }
        }
@@ -371,18 +329,18 @@ private fun PhoneDoctorApp(context: Context) {
       }
       item { DeviceHero(snapshot,onScan={selected=1;startDeviceScan()}) }
       item { DeviceMetrics(snapshot) }
-      item { Text("स्कैन परिणाम",fontSize=19.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen) }
+      item { Text("Scan Results",fontSize=19.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen) }
       items(issues) { IssueCard(it,context) }
-      item { Text("सीमा: सामान्य Android ऐप बैटरी, RAM और स्टोरेज जैसे कुछ आँकड़े पढ़ सकता है; सभी हार्डवेयर, malware या दूसरे ऐप्स की निजी जानकारी की पूरी जाँच की गारंटी नहीं दे सकता।",fontSize=12.sp,color=Secondary) }
+      item { Text("Limitations: a standard Android app can read selected metrics such as battery, RAM and storage, but cannot guarantee a complete hardware or malware scan.",fontSize=12.sp,color=Secondary) }
      }
      2 -> {
-      item { PageHeading("सिस्टम टूल्स","सुरक्षित Android Settings shortcuts") }
-      item { ActionCard("Storage Settings","स्टोरेज स्पेस और उपयोग देखें",Icons.Default.Storage){openSystemPage(context,"storage")} }
-      item { ActionCard("Battery Settings","Battery Saver और बैटरी विकल्प",Icons.Default.BatteryFull){openSystemPage(context,"battery")} }
-      item { ActionCard("App permissions","Privacy और Permission Manager",Icons.Default.Security){openSystemPage(context,"permissions")} }
-      item { ActionCard("Installed apps","ऐप जानकारी, force stop और uninstall विकल्प",Icons.Default.Apps){openSystemPage(context,"apps")} }
-      item { ActionCard("Wi-Fi Settings","Wi-Fi और नेटवर्क सेटिंग्स",Icons.Default.Wifi){openSystemPage(context,"wifi")} }
-      item { ActionCard("System update","डिवाइस जानकारी / सिस्टम अपडेट तक जाएँ",Icons.Default.SystemUpdate){openSystemPage(context,"update")} }
+      item { PageHeading("System Tools","Branded shortcuts to Android system settings") }
+      item { ActionCard("Storage Settings","Review storage space and usage",Icons.Default.Storage){openSystemPage(context,"storage")} }
+      item { ActionCard("Battery Settings","Battery Saver and battery options",Icons.Default.BatteryFull){openSystemPage(context,"battery")} }
+      item { ActionCard("App Permissions","Privacy and Permission Manager",Icons.Default.Security){openSystemPage(context,"permissions")} }
+      item { ActionCard("Installed Apps","App info, force stop and uninstall options",Icons.Default.Apps){openSystemPage(context,"apps")} }
+      item { ActionCard("Wi-Fi Settings","Wi-Fi and network settings",Icons.Default.Wifi){openSystemPage(context,"wifi")} }
+      item { ActionCard("System Update","Open device information and system update",Icons.Default.SystemUpdate){openSystemPage(context,"update")} }
      }
      3 -> {
       item { PageHeading("स्कैन रिपोर्ट","इस समय डिवाइस से पढ़ी गई जानकारी") }
@@ -397,21 +355,21 @@ private fun PhoneDoctorApp(context: Context) {
       item { Button(onClick={startDeviceScan()},enabled=!isScanning,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Mint)){Icon(Icons.Default.Refresh,null);Spacer(Modifier.width(8.dp));Text(if(isScanning) "जाँच जारी है…" else "रिपोर्ट रीफ़्रेश / स्कैन करें")} }
      }
      else -> {
-      item { PageHeading("सेटिंग्स","Phone Doctor और सिस्टम विकल्प") }
-      item { ActionCard("Android Settings","मुख्य सिस्टम सेटिंग्स खोलें",Icons.Default.Settings){openSystemPage(context,"settings")} }
-      item { ActionCard("App permissions","Privacy और Permission Manager खोलें",Icons.Default.Security){openSystemPage(context,"permissions")} }
-      item { ActionCard("App info","Phone Doctor की Android app info",Icons.Default.Info){try{context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(android.net.Uri.parse("package:"+context.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))}catch(_:Exception){openSystemPage(context,"settings")}} }
-      item { ReportRow("ऐप संस्करण",(context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.1")) }
+      item { PageHeading("Phone Doctor Settings","App information and system options") }
+      item { ActionCard("Android Settings","Open main device settings",Icons.Default.Settings){openSystemPage(context,"settings")} }
+      item { ActionCard("App Permissions","Manage privacy and permissions",Icons.Default.Security){openSystemPage(context,"permissions")} }
+      item { ActionCard("App Info","Open Phone Doctor app details",Icons.Default.Info){try{context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(android.net.Uri.parse("package:"+context.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))}catch(_:Exception){openSystemPage(context,"settings")}} }
+      item { ReportRow("App Version",(context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.1")) }
       item { ReportRow("Package","com.paliaapk.phonedoctor") }
-      item { ReportRow("ब्रांड","By PaliaAPK HUB") }
-      item { ReportRow("डेवलपर","Developer By shanpalia") }
+      item { ReportRow("Brand","By PaliaAPK HUB") }
+      item { ReportRow("Developer","Developer By shanpalia") }
       item {
        Card(shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=Color.White),border=BorderStroke(1.dp,Border)) {
         Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
-         Row(verticalAlignment=Alignment.CenterVertically) { Icon(Icons.Default.SystemUpdate,null,tint=Mint,modifier=Modifier.size(28.dp)); Spacer(Modifier.width(10.dp)); Column(Modifier.weight(1f)) { Text("Check APK System Version",fontSize=16.sp,fontWeight=FontWeight.Bold,color=DeepGreen); Text("www.paliaapkhub.com से नवीनतम संस्करण verify करें",fontSize=12.sp,color=Secondary) } }
+         Row(verticalAlignment=Alignment.CenterVertically) { Icon(Icons.Default.SystemUpdate,null,tint=Mint,modifier=Modifier.size(28.dp)); Spacer(Modifier.width(10.dp)); Column(Modifier.weight(1f)) { Text("Check APK System Version",fontSize=16.sp,fontWeight=FontWeight.Bold,color=DeepGreen); Text("Verify the latest release from www.paliaapkhub.com",fontSize=12.sp,color=Secondary) } }
          Text(versionStatus,fontSize=13.sp,color=if(versionStatus.startsWith("नया संस्करण")) Mint else DeepGreen)
-         Button(onClick={checkWebsiteVersion()},enabled=!versionChecking,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Mint)) { if(versionChecking) CircularProgressIndicator(modifier=Modifier.size(18.dp),strokeWidth=2.dp,color=Color.White) else Icon(Icons.Default.Refresh,null); Spacer(Modifier.width(8.dp)); Text(if(versionChecking)"जाँच जारी है…" else "Check Version") }
-         if(latestVersion!=null && updateUrl!=null) Button(onClick={try{context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(updateUrl)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))}catch(_:Exception){}},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=DeepGreen)) { Icon(Icons.Default.Download,null); Spacer(Modifier.width(8.dp)); Text("नया APK देखें / डाउनलोड करें") }
+         Button(onClick={checkWebsiteVersion()},enabled=!versionChecking,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Mint)) { if(versionChecking) CircularProgressIndicator(modifier=Modifier.size(18.dp),strokeWidth=2.dp,color=Color.White) else Icon(Icons.Default.Refresh,null); Spacer(Modifier.width(8.dp)); Text(if(versionChecking)"Checking…" else "Check Version") }
+         if(latestVersion!=null && updateUrl!=null) Button(onClick={try{context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(updateUrl)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))}catch(_:Exception){}},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=DeepGreen)) { Icon(Icons.Default.Download,null); Spacer(Modifier.width(8.dp)); Text("View / Download APK") }
          Text("Website version file: /phone-doctor-version.json",fontSize=11.sp,color=Secondary)
         }
        }
@@ -442,7 +400,7 @@ private fun PhoneDoctorApp(context: Context) {
    Box(Modifier.size(116.dp).background(PaleMint,RoundedCornerShape(32.dp)),contentAlignment=Alignment.Center){Image(painterResource(R.drawable.ic_phone_doctor),contentDescription="Phone Doctor icon",modifier=Modifier.size(108.dp))}
    Spacer(Modifier.height(26.dp));Text("Phone Doctor",fontSize=32.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen)
    Spacer(Modifier.height(6.dp));Text("By PaliaAPK HUB",fontSize=18.sp,fontWeight=FontWeight.Bold,color=Mint)
-   Spacer(Modifier.height(8.dp));Text("आपके फोन की सेहत, अब आपकी हथेली में",fontSize=14.sp,color=Secondary)
+   Spacer(Modifier.height(8.dp));Text("Smart diagnostics for your Android device",fontSize=14.sp,color=Secondary)
    Spacer(Modifier.height(42.dp));LinearProgressIndicator(Modifier.fillMaxWidth(.58f),color=Mint,trackColor=Border)
    Spacer(Modifier.height(42.dp));Text("Developer By shanpalia",fontSize=15.sp,fontWeight=FontWeight.SemiBold,color=DeepGreen)
   }
