@@ -441,25 +441,34 @@ private fun PhoneDoctorApp(context: Context) {
       }
       item {
        Card(shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=Color.White),border=BorderStroke(1.dp,Border)) {
-        Column(Modifier.fillMaxWidth().padding(15.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
          Row(verticalAlignment=Alignment.CenterVertically) {
-          Icon(Icons.Default.Info,null,tint=Mint,modifier=Modifier.size(24.dp))
-          Spacer(Modifier.width(10.dp))
-          Column(Modifier.weight(1f)) { Text("App Version",fontSize=12.sp,color=Secondary); Text("v" + (context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.1"),fontSize=17.sp,fontWeight=FontWeight.Bold,color=DeepGreen) }
+          Box(Modifier.size(42.dp).background(PaleMint,RoundedCornerShape(13.dp)),contentAlignment=Alignment.Center) {
+           Icon(Icons.Default.Info,null,tint=Mint,modifier=Modifier.size(24.dp))
+          }
+          Spacer(Modifier.width(12.dp))
+          Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(3.dp)) {
+           Text("App Version",fontSize=12.sp,color=Secondary)
+           Text("v" + (context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.1"),fontSize=20.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen)
+           Text("Phone Doctor for Android",fontSize=12.sp,color=Secondary)
+          }
          }
-         Divider(color=Border)
-         Row(verticalAlignment=Alignment.CenterVertically) {
-          Icon(Icons.Default.Code,null,tint=Mint,modifier=Modifier.size(24.dp))
-          Spacer(Modifier.width(10.dp))
-          Column(Modifier.weight(1f)) { Text("Package ID",fontSize=12.sp,color=Secondary); Text("com.paliaapk.phonedoctor",fontSize=14.sp,fontWeight=FontWeight.SemiBold,color=DeepGreen) }
+        }
+       }
+      }
+      item {
+       Card(onClick={try{context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://paliaapkhub.com/")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))}catch(_:Exception){}},shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=Color.White),border=BorderStroke(1.dp,Border)) {
+        Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically) {
+         Box(Modifier.size(44.dp).background(PaleMint,RoundedCornerShape(13.dp)),contentAlignment=Alignment.Center) {
+          Icon(Icons.Default.Apps,null,tint=Mint,modifier=Modifier.size(25.dp))
          }
-         Divider(color=Border)
-         Row(verticalAlignment=Alignment.CenterVertically) {
-          Icon(Icons.Default.Language,null,tint=Mint,modifier=Modifier.size(24.dp))
-          Spacer(Modifier.width(10.dp))
-          Column(Modifier.weight(1f)) { Text("Official Website",fontSize=12.sp,color=Secondary); Text("www.paliaapkhub.com",fontSize=15.sp,fontWeight=FontWeight.Bold,color=DeepGreen) }
-          IconButton(onClick={try{context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://www.paliaapkhub.com")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))}catch(_:Exception){}}){Icon(Icons.Default.OpenInNew,null,tint=Mint)}
+         Spacer(Modifier.width(12.dp))
+         Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(4.dp)) {
+          Text("More Games & Apps",fontSize=15.sp,fontWeight=FontWeight.Bold,color=DeepGreen)
+          Text("Explore apps and games from PaliaAPK HUB",fontSize=12.sp,color=Secondary)
+          Text("paliaapkhub.com",fontSize=12.sp,fontWeight=FontWeight.SemiBold,color=Mint)
          }
+         Icon(Icons.Default.OpenInNew,null,tint=Mint)
         }
        }
       }
