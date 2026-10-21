@@ -427,19 +427,6 @@ private fun PhoneDoctorApp(context: Context) {
       item { ActionCard("App Permissions","Manage privacy and permissions",Icons.Default.Security){openSystemPage(context,"permissions")} }
       item { ActionCard("App Info","Open Phone Doctor app details",Icons.Default.Info){try{context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(android.net.Uri.parse("package:"+context.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))}catch(_:Exception){openSystemPage(context,"settings")}} }
       item {
-       Card(shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=DeepGreen)) {
-        Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically) {
-         Box(Modifier.size(58.dp).background(Color.White.copy(alpha=.12f),RoundedCornerShape(16.dp)),contentAlignment=Alignment.Center) { Image(painterResource(R.drawable.ic_phone_doctor),contentDescription="Phone Doctor",modifier=Modifier.size(52.dp)) }
-         Spacer(Modifier.width(13.dp))
-         Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(3.dp)) {
-          Text("PHONE DOCTOR",fontSize=19.sp,fontWeight=FontWeight.ExtraBold,color=Color.White)
-          Text("By PaliaAPK HUB",fontSize=14.sp,fontWeight=FontWeight.Bold,color=Color(0xFF6EE7B7))
-          Text("Developer By shanpalia",fontSize=12.sp,color=Color.White.copy(alpha=.78f))
-         }
-        }
-       }
-      }
-      item {
        Card(shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=PaleMint),border=BorderStroke(1.dp,Border)) {
         Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
          Row(verticalAlignment=Alignment.CenterVertically) {
@@ -495,6 +482,19 @@ private fun PhoneDoctorApp(context: Context) {
       }
      }
     }
+      item {
+       Card(shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=DeepGreen)) {
+        Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically) {
+         Box(Modifier.size(58.dp).background(Color.White.copy(alpha=.12f),RoundedCornerShape(16.dp)),contentAlignment=Alignment.Center) { Image(painterResource(R.drawable.ic_phone_doctor),contentDescription="Phone Doctor",modifier=Modifier.size(52.dp)) }
+         Spacer(Modifier.width(13.dp))
+         Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(3.dp)) {
+          Text("PHONE DOCTOR",fontSize=19.sp,fontWeight=FontWeight.ExtraBold,color=Color.White)
+          Text("By PaliaAPK HUB",fontSize=14.sp,fontWeight=FontWeight.Bold,color=Color(0xFF6EE7B7))
+          Text("Developer By shanpalia",fontSize=12.sp,color=Color.White.copy(alpha=.78f))
+         }
+        }
+       }
+      }
     item { Spacer(Modifier.height(8.dp)) }
    }
   }
