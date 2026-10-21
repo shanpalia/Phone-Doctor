@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -92,6 +93,9 @@ private fun findings(s: DeviceSnapshot): List<Finding> = buildList {
 
 @Composable
 private fun PhoneDoctorApp(context: Context) {
+ var showSplash by remember { mutableStateOf(true) }
+ LaunchedEffect(Unit) { delay(1800); showSplash = false }
+ if (showSplash) { BrandingSplash(); return }
  var selected by remember { mutableIntStateOf(0) }
  var refreshKey by remember { mutableIntStateOf(0) }
  val snapshot = remember(refreshKey) { readDevice(context) }
@@ -166,6 +170,34 @@ private fun PhoneDoctorApp(context: Context) {
      }
     }
    }
+  }
+ }
+}
+
+
+@Composable
+private fun BrandingSplash() {
+ Surface(modifier = Modifier.fillMaxSize(), color = Page) {
+  Column(
+   modifier = Modifier.fillMaxSize().padding(28.dp),
+   horizontalAlignment = Alignment.CenterHorizontally,
+   verticalArrangement = Arrangement.Center
+  ) {
+   Box(Modifier.size(116.dp).background(PaleMint, RoundedCornerShape(32.dp)), contentAlignment = Alignment.Center) {
+    Icon(Icons.Default.HealthAndSafety, null, tint = Mint, modifier = Modifier.size(82.dp))
+   }
+   Spacer(Modifier.height(26.dp))
+   Text("Phone Doctor", fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = DeepGreen)
+   Spacer(Modifier.height(6.dp))
+   Text("By PaliaAPK HUB", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Mint)
+   Spacer(Modifier.height(8.dp))
+   Text("आपके फोन की सेहत, अब आपकी हथेली में", fontSize = 14.sp, color = Secondary)
+   Spacer(Modifier.height(46.dp))
+   LinearProgressIndicator(modifier = Modifier.fillMaxWidth(0.58f), color = Mint, trackColor = Border)
+   Spacer(Modifier.height(42.dp))
+   Text("Developer By shanpalia", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = DeepGreen)
+   Spacer(Modifier.height(7.dp))
+   Text("सुरक्षित जाँच • स्पष्ट समाधान", fontSize = 12.sp, color = Secondary)
   }
  }
 }
