@@ -143,7 +143,10 @@ private fun PhoneDoctorApp(context: Context) {
    NavigationBar(containerColor=Color.White, contentColor=DeepGreen) {
     val labels=listOf("होम","स्कैन","टूल्स","रिपोर्ट","सेटिंग्स")
     val icons=listOf(Icons.Default.PhoneAndroid,Icons.Default.HealthAndSafety,Icons.Default.Build,Icons.Default.Assessment,Icons.Default.Settings)
-    labels.forEachIndexed { i,label -> NavigationBarItem(selected=selected==i,onClick={ selected=i; if(i==1){refreshKey++;lastScan="स्कैन पूरा हुआ"} },icon={Icon(icons[i],label)},label={Text(label,fontSize=11.sp)}) }
+    labels.forEachIndexed { i,label -> NavigationBarItem(selected=selected==i,onClick={
+     selected=i
+     if(i==1){ refreshKey++; lastScan="स्कैन पूरा हुआ • अभी अपडेट किया" }
+    },icon={Icon(icons[i],label)},label={Text(label,fontSize=11.sp)}) }
    }
   }) { padding ->
    LazyColumn(Modifier.fillMaxSize().padding(padding),contentPadding=PaddingValues(16.dp),verticalArrangement=Arrangement.spacedBy(14.dp)) {
@@ -158,7 +161,22 @@ private fun PhoneDoctorApp(context: Context) {
      }
      1 -> {
       item { PageHeading("फोन स्कैन","वर्तमान सिस्टम आँकड़े दोबारा पढ़ें") }
-      item { DeviceHero(snapshot,onScan={refreshKey++;lastScan="स्कैन पूरा हुआ"}) }
+      item {
+       Card(colors=CardDefaults.cardColors(containerColor=PaleMint),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,Border)) {
+        Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=Alignment.CenterVertically) {
+         Icon(Icons.Default.CheckCircle,null,tint=Mint,modifier=Modifier.size(28.dp))
+         Spacer(Modifier.width(10.dp))
+         Column(Modifier.weight(1f)) {
+          Text(lastScan, fontWeight=FontWeight.Bold, color=DeepGreen, fontSize=14.sp)
+          Text("डिवाइस के मौजूदा आँकड़े पढ़कर परिणाम नीचे दिखाए गए हैं।", color=Secondary, fontSize=12.sp)
+         }
+         Button(onClick={refreshKey++;lastScan="स्कैन पूरा हुआ • अभी अपडेट किया"},colors=ButtonDefaults.buttonColors(containerColor=Mint)) {
+          Icon(Icons.Default.Refresh,null); Spacer(Modifier.width(4.dp)); Text("फिर स्कैन")
+         }
+        }
+       }
+      }
+      item { DeviceHero(snapshot,onScan={selected=1;refreshKey++;lastScan="स्कैन पूरा हुआ • अभी अपडेट किया"}) }
       item { DeviceMetrics(snapshot) }
       item { Text("स्कैन परिणाम",fontSize=19.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen) }
       items(issues) { IssueCard(it,context) }
