@@ -385,18 +385,62 @@ private fun PhoneDoctorApp(context: Context) {
       item { ActionCard("Android Settings","Open main device settings",Icons.Default.Settings){openSystemPage(context,"settings")} }
       item { ActionCard("App Permissions","Manage privacy and permissions",Icons.Default.Security){openSystemPage(context,"permissions")} }
       item { ActionCard("App Info","Open Phone Doctor app details",Icons.Default.Info){try{context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(android.net.Uri.parse("package:"+context.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))}catch(_:Exception){openSystemPage(context,"settings")}} }
-      item { ReportRow("App Version",(context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.1")) }
-      item { ReportRow("Package","com.paliaapk.phonedoctor") }
-      item { ReportRow("Brand","By PaliaAPK HUB") }
-      item { ReportRow("Developer","Developer By shanpalia") }
       item {
-       Card(shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=Color.White),border=BorderStroke(1.dp,Border)) {
-        Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
-         Row(verticalAlignment=Alignment.CenterVertically) { Icon(Icons.Default.SystemUpdate,null,tint=Mint,modifier=Modifier.size(28.dp)); Spacer(Modifier.width(10.dp)); Column(Modifier.weight(1f)) { Text("Check APK System Version",fontSize=16.sp,fontWeight=FontWeight.Bold,color=DeepGreen); Text("Verify the latest release from www.paliaapkhub.com",fontSize=12.sp,color=Secondary) } }
-         Text(versionStatus,fontSize=13.sp,color=if(versionStatus.startsWith("New version")) Mint else DeepGreen)
-         Button(onClick={checkWebsiteVersion()},enabled=!versionChecking,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Mint)) { if(versionChecking) CircularProgressIndicator(modifier=Modifier.size(18.dp),strokeWidth=2.dp,color=Color.White) else Icon(Icons.Default.Refresh,null); Spacer(Modifier.width(8.dp)); Text(if(versionChecking)"Checking…" else "Check Version") }
-         if(latestVersion!=null && updateUrl!=null) Button(onClick={try{context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(updateUrl)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))}catch(_:Exception){}},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=DeepGreen)) { Icon(Icons.Default.Download,null); Spacer(Modifier.width(8.dp)); Text("View / Download APK") }
-         Text("Website version file: /phone-doctor-version.json",fontSize=11.sp,color=Secondary)
+       Card(shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=DeepGreen)) {
+        Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically) {
+         Box(Modifier.size(58.dp).background(Color.White.copy(alpha=.12f),RoundedCornerShape(16.dp)),contentAlignment=Alignment.Center) { Image(painterResource(R.drawable.ic_phone_doctor),contentDescription="Phone Doctor",modifier=Modifier.size(52.dp)) }
+         Spacer(Modifier.width(13.dp))
+         Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(3.dp)) {
+          Text("PHONE DOCTOR",fontSize=19.sp,fontWeight=FontWeight.ExtraBold,color=Color.White)
+          Text("By PaliaAPK HUB",fontSize=14.sp,fontWeight=FontWeight.Bold,color=Color(0xFF6EE7B7))
+          Text("Developer By shanpalia",fontSize=12.sp,color=Color.White.copy(alpha=.78f))
+         }
+        }
+       }
+      }
+      item {
+       Card(shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=Color.White),border=BorderStroke(1.dp,Border)) {
+        Column(Modifier.fillMaxWidth().padding(15.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+         Row(verticalAlignment=Alignment.CenterVertically) {
+          Icon(Icons.Default.Info,null,tint=Mint,modifier=Modifier.size(24.dp))
+          Spacer(Modifier.width(10.dp))
+          Column(Modifier.weight(1f)) { Text("App Version",fontSize=12.sp,color=Secondary); Text("v" + (context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.1"),fontSize=17.sp,fontWeight=FontWeight.Bold,color=DeepGreen) }
+         }
+         Divider(color=Border)
+         Row(verticalAlignment=Alignment.CenterVertically) {
+          Icon(Icons.Default.Code,null,tint=Mint,modifier=Modifier.size(24.dp))
+          Spacer(Modifier.width(10.dp))
+          Column(Modifier.weight(1f)) { Text("Package ID",fontSize=12.sp,color=Secondary); Text("com.paliaapk.phonedoctor",fontSize=14.sp,fontWeight=FontWeight.SemiBold,color=DeepGreen) }
+         }
+         Divider(color=Border)
+         Row(verticalAlignment=Alignment.CenterVertically) {
+          Icon(Icons.Default.Language,null,tint=Mint,modifier=Modifier.size(24.dp))
+          Spacer(Modifier.width(10.dp))
+          Column(Modifier.weight(1f)) { Text("Official Website",fontSize=12.sp,color=Secondary); Text("www.paliaapkhub.com",fontSize=15.sp,fontWeight=FontWeight.Bold,color=DeepGreen) }
+          IconButton(onClick={try{context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://www.paliaapkhub.com")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))}catch(_:Exception){}}){Icon(Icons.Default.OpenInNew,null,tint=Mint)}
+         }
+        }
+       }
+      }
+      item {
+       Card(shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=PaleMint),border=BorderStroke(1.dp,Border)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+         Row(verticalAlignment=Alignment.CenterVertically) {
+          Box(Modifier.size(42.dp).background(Color.White,RoundedCornerShape(12.dp)),contentAlignment=Alignment.Center){Icon(Icons.Default.SystemUpdate,null,tint=Mint,modifier=Modifier.size(26.dp))}
+          Spacer(Modifier.width(10.dp))
+          Column(Modifier.weight(1f)) { Text("Official Version Check",fontSize=17.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen); Text("Check the latest app release from PaliaAPK HUB",fontSize=12.sp,color=Secondary) }
+         }
+         Row(verticalAlignment=Alignment.CenterVertically) {
+          Icon(if(versionChecking) Icons.Default.Sync else if(versionStatus.startsWith("New version")) Icons.Default.SystemUpdate else Icons.Default.VerifiedUser,null,tint=Mint)
+          Spacer(Modifier.width(8.dp))
+          Text(versionStatus,fontSize=13.sp,color=DeepGreen,modifier=Modifier.weight(1f))
+         }
+         Button(onClick={checkWebsiteVersion()},enabled=!versionChecking,modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(14.dp),colors=ButtonDefaults.buttonColors(containerColor=Mint)) {
+          if(versionChecking) CircularProgressIndicator(modifier=Modifier.size(18.dp),strokeWidth=2.dp,color=Color.White) else Icon(Icons.Default.Refresh,null)
+          Spacer(Modifier.width(8.dp)); Text(if(versionChecking)"Checking Website…" else "Check for Updates")
+         }
+         if(latestVersion!=null && updateUrl!=null) Button(onClick={try{context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(updateUrl)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))}catch(_:Exception){}},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(14.dp),colors=ButtonDefaults.buttonColors(containerColor=DeepGreen)) { Icon(Icons.Default.Download,null); Spacer(Modifier.width(8.dp)); Text("Download Latest APK") }
+         Text("Update source: https://www.paliaapkhub.com/phone-doctor-version.json",fontSize=10.sp,color=Secondary)
         }
        }
       }
