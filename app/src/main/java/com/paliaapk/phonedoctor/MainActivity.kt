@@ -172,7 +172,7 @@ private fun PhoneDoctorApp(context: Context) {
     } catch (e: Exception) { Triple("ERROR", "", e.message ?: "कनेक्शन उपलब्ध नहीं") }
    }
    when (result.first) {
-    "UPDATE" -> { latestVersion = result.second; updateUrl = result.third; versionStatus = "नया संस्करण " + result.second + " उपलब्ध है। Installed version " + BuildConfig.VERSION_NAME + " है।" }
+    "UPDATE" -> { latestVersion = result.second; updateUrl = result.third; versionStatus = "नया संस्करण " + result.second + " उपलब्ध है। Installed version " + (context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.1") + " है।" }
     "CURRENT" -> { latestVersion = result.second; updateUrl = null; versionStatus = "आपका ऐप Up to date है • नवीनतम " + result.second }
     else -> versionStatus = "वर्ज़न verify नहीं हो पाया। इंटरनेट और वेबसाइट की version file जाँचें। (" + result.third + ")"
    }
