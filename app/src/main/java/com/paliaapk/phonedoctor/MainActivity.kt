@@ -136,7 +136,7 @@ private fun hardwareChecks(context: Context): List<Pair<String, String>> {
   "Camera Hardware" to status(PackageManager.FEATURE_CAMERA_ANY),
   "Flash" to status(PackageManager.FEATURE_CAMERA_FLASH),
   "Microphone" to status(PackageManager.FEATURE_MICROPHONE),
-  "Motion Sensors" to if (sensors.isNotEmpty()) "${sensors.size} सेंसर Android को रिपोर्ट हुए" else "No sensors reported",
+  "Motion Sensors" to if (sensors.isNotEmpty()) "${sensors.size} sensors detected" else "No sensors reported",
   "Fingerprint Sensor" to status(PackageManager.FEATURE_FINGERPRINT),
   "GPS / Location Hardware" to status(PackageManager.FEATURE_LOCATION_GPS)
  )
@@ -201,6 +201,7 @@ private fun PhoneDoctorApp(context: Context) {
  var isScanning by remember { mutableStateOf(false) }
  var scanProgress by remember { mutableIntStateOf(0) }
  var reportVisibleCount by remember { mutableIntStateOf(0) }
+ var selectedHardware by remember { mutableStateOf<Pair<String, String>?>(null) }
  var versionStatus by remember { mutableStateOf("Tap Check Version to look for updates") }
  var latestVersion by remember { mutableStateOf<String?>(null) }
  var updateUrl by remember { mutableStateOf<String?>(null) }
@@ -346,16 +347,29 @@ private fun PhoneDoctorApp(context: Context) {
       item { ActionCard("System Update","Open device information and system update",Icons.Default.SystemUpdate){openSystemPage(context,"update")} }
      }
      3 -> {
-      item { PageHeading("स्कैन रिपोर्ट","इस समय डिवाइस से पढ़ी गई जानकारी") }
-      item { DeviceMetrics(snapshot) }
-      item { ReportRow("डिवाइस",snapshot.displayName) }
-      item { ReportRow("Android","Version ${snapshot.android} • API ${snapshot.sdk}") }
-      item { ReportRow("RAM", "${formatMb(snapshot.ramTotal-snapshot.ramAvailable)} उपयोग / ${formatMb(snapshot.ramTotal)} कुल (${snapshot.ramUsedPercent}%)") }
-      item { ReportRow("Storage","${formatMb(snapshot.storageTotal-snapshot.storageFree)} उपयोग / ${formatMb(snapshot.storageTotal)} कुल (${snapshot.storageUsedPercent}%)") }
-      item { ReportRow("Battery"," ${snapshot.batteryPercent?.let{"$it%"} ?: "उपलब्ध नहीं"} • ${snapshot.batteryHealth}${snapshot.batteryTempC?.let{" • $it°C"} ?: ""}") }
-      item { ReportRow("चार्जिंग",if(snapshot.charging)"Yes" else "No / status unavailable") }
-      item { ReportRow("Network",snapshot.network) }
-      item { Button(onClick={startDeviceScan()},enabled=!isScanning,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Mint)){Icon(Icons.Default.Refresh,null);Spacer(Modifier.width(8.dp));Text(if(isScanning) "जाँच जारी है…" else "रिपोर्ट रीफ़्रेश / स्कैन करें")} }
+      item { PageHeading("Hardware Report","Tap any component to view its status and diagnostic limits") }
+      items(hardwareChecks(context)) { check ->
+       val isOk = check.second == "Available" || (check.first == "Motion Sensors" && check.second != "No sensors reported")
+       Card(onClick={selectedHardware=check},shape=RoundedCornerShape(16.dp),colors=CardDefaults.cardColors(containerColor=Color.White),border=BorderStroke(1.dp,Border)) {
+        Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=Alignment.CenterVertically) {
+         Icon(if(isOk) Icons.Default.CheckCircle else Icons.Default.Error,null,tint=if(isOk) Color(0xFF16A34A) else Color(0xFFDC2626),modifier=Modifier.size(28.dp))
+         Spacer(Modifier.width(12.dp))
+         Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(3.dp)) {
+          Text(check.first,fontWeight=FontWeight.Bold,color=DeepGreen,fontSize=14.sp)
+          Text(check.second,fontSize=12.sp,color=if(isOk) Color(0xFF16A34A) else Color(0xFFDC2626))
+         }
+         Icon(Icons.Default.ChevronRight,null,tint=Secondary)
+        }
+       }
+      }
+      item {
+       Card(colors=CardDefaults.cardColors(containerColor=PaleMint),shape=RoundedCornerShape(16.dp),border=BorderStroke(1.dp,Border)) {
+        Column(Modifier.padding(14.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
+         Text("Diagnostic note",fontWeight=FontWeight.Bold,color=DeepGreen)
+         Text("Green means Android reports the feature as available. Red means it was not detected. This check does not prove the component works physically; tap a row for details.",fontSize=12.sp,color=Secondary)
+        }
+       }
+      }
      }
      else -> {
       item { PageHeading("Phone Doctor Settings","App information and system options") }
@@ -382,6 +396,11 @@ private fun PhoneDoctorApp(context: Context) {
     item { Spacer(Modifier.height(8.dp)) }
    }
   }
+ }
+ if(selectedHardware != null) {
+  val item = selectedHardware!!
+  val isOk = item.second == "Available" || (item.first == "Motion Sensors" && item.second != "No sensors reported")
+  AlertDialog(onDismissRequest={selectedHardware=null},icon={Icon(if(isOk) Icons.Default.CheckCircle else Icons.Default.Error,null,tint=if(isOk) Color(0xFF16A34A) else Color(0xFFDC2626))},title={Text(item.first,color=DeepGreen)},text={Text("Status: ${item.second}\n\n${if(isOk) "Android reports this hardware feature as available. This is an availability check, not a full physical function test." else "Android did not report this feature. It may be unsupported or unavailable on this device; verify the device specifications before treating this as a fault."}",color=Secondary)},confirmButton={TextButton(onClick={selectedHardware=null}){Text("Close")}})
  }
 }
 
