@@ -200,6 +200,7 @@ private fun PhoneDoctorApp(context: Context) {
  var lastScan by remember { mutableStateOf("Not scanned yet") }
  var isScanning by remember { mutableStateOf(false) }
  var scanProgress by remember { mutableIntStateOf(0) }
+ var reportVisibleCount by remember { mutableIntStateOf(0) }
  var versionStatus by remember { mutableStateOf("Tap Check Version to look for updates") }
  var latestVersion by remember { mutableStateOf<String?>(null) }
  var updateUrl by remember { mutableStateOf<String?>(null) }
@@ -209,6 +210,7 @@ private fun PhoneDoctorApp(context: Context) {
   if (isScanning) return
   isScanning = true
   scanProgress = 0
+  reportVisibleCount = 0
   lastScan = "Starting device diagnostics…"
   scope.launch {
    val stages = listOf("Reading battery information…", "Checking available RAM…", "Checking storage usage…", "Refreshing network and Android information…")
@@ -218,7 +220,13 @@ private fun PhoneDoctorApp(context: Context) {
     refreshKey++
     scanProgress = (index + 1) * 25
    }
-   lastScan = "Scan complete • Device metrics refreshed"
+   lastScan = "Scan complete • Generating report…"
+   for (count in 1..8) {
+    delay(350)
+    reportVisibleCount = count
+    scanProgress = 50 + (count * 50 / 8)
+   }
+   lastScan = "Scan complete • Report generated"
    isScanning = false
   }
  }
@@ -328,7 +336,7 @@ private fun PhoneDoctorApp(context: Context) {
        }
       }
       item { Text("Generated Report",fontSize=19.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen) }
-      items(issues) { issue ->
+      items(issues.take(reportVisibleCount)) { issue ->
        IssueCard(issue,context)
       }
       item { DeviceMetrics(snapshot) }
