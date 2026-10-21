@@ -86,22 +86,22 @@ private fun readDevice(context: Context): DeviceSnapshot {
  val temp = intent?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -1)?.takeIf { it >= 0 }?.div(10f)
  val healthCode = intent?.getIntExtra(BatteryManager.EXTRA_HEALTH, -1) ?: -1
  val health = when (healthCode) {
-  BatteryManager.BATTERY_HEALTH_GOOD -> "अच्छी"
-  BatteryManager.BATTERY_HEALTH_OVERHEAT -> "बहुत गर्म"
-  BatteryManager.BATTERY_HEALTH_DEAD -> "बैटरी खराब"
-  BatteryManager.BATTERY_HEALTH_COLD -> "बहुत ठंडी"
-  BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> "वोल्टेज चेतावनी"
-  BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> "सिस्टम ने खराबी बताई"
-  else -> "उपलब्ध नहीं"
+  BatteryManager.BATTERY_HEALTH_GOOD -> "Good"
+  BatteryManager.BATTERY_HEALTH_OVERHEAT -> "Overheating"
+  BatteryManager.BATTERY_HEALTH_DEAD -> "Battery failure"
+  BatteryManager.BATTERY_HEALTH_COLD -> "Too cold"
+  BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> "Voltage warning"
+  BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> "System-reported failure"
+  else -> "Not available"
  }
  val status = intent?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
  val charging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
  val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
  val caps = cm.activeNetwork?.let { cm.getNetworkCapabilities(it) }
  val network = when {
-  caps == null -> "कनेक्शन नहीं"
+  caps == null -> "No connection"
   caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "Wi-Fi"
-  caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "मोबाइल डेटा"
+  caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "Mobile Data"
   caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> "Ethernet"
   caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN) -> "VPN"
   else -> "कनेक्टेड"
@@ -269,12 +269,9 @@ private fun PhoneDoctorApp(context: Context) {
     when(selected) {
      0 -> {
       item { DeviceHero(snapshot,onScan={selected=1;startDeviceScan()}) }
-      item { DeviceMetrics(snapshot) }
-      item { Row(verticalAlignment=Alignment.CenterVertically){Text("Device Status",fontSize=19.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen,modifier=Modifier.weight(1f));Text(lastScan,fontSize=11.sp,color=Secondary)} }
-      items(issues.take(4)) { IssueCard(it,context) }
-      item { ActionCard("पूरी जाँच देखें","RAM, स्टोरेज, बैटरी और मैनुअल सुरक्षा जाँच",Icons.Default.HealthAndSafety){selected=1;startDeviceScan()} }
      }
      1 -> {
+      item { DeviceHero(snapshot,onScan={startDeviceScan()}) }
       item { PageHeading("Device Scan","Hardware, battery, RAM, storage and security overview") }
       item {
        Card(colors=CardDefaults.cardColors(containerColor=Color.White),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,Border)) {
@@ -303,7 +300,7 @@ private fun PhoneDoctorApp(context: Context) {
            Text("Run a scan with Google Play Protect or your phone security settings.",fontSize=12.sp,color=Secondary)
           }
          }
-         Text("Android ऐप को दूसरे ऐप्स की निजी फाइलों और पूरे फोन को अपने-आप वायरस स्कैन करने की अनुमति नहीं देता। इसलिए यहाँ नकली 'साफ़' परिणाम नहीं दिखाया जाता।",fontSize=12.sp,color=Secondary)
+         Text("Android does not allow this app to scan other apps’ private files or certify the entire phone as malware-free. No fake clean result is shown.",fontSize=12.sp,color=Secondary)
          Button(onClick={openSecuritySettings(context)},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Mint)) {
           Icon(Icons.Default.Security,null); Spacer(Modifier.width(8.dp)); Text("Open Security Settings")
          }
@@ -312,26 +309,30 @@ private fun PhoneDoctorApp(context: Context) {
       }
       item {
        Card(colors=CardDefaults.cardColors(containerColor=PaleMint),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,Border)) {
-        Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=Alignment.CenterVertically) {
-         Icon(Icons.Default.CheckCircle,null,tint=Mint,modifier=Modifier.size(28.dp))
-         Spacer(Modifier.width(10.dp))
-         Column(Modifier.weight(1f)) {
-          Text(lastScan, fontWeight=FontWeight.Bold, color=DeepGreen, fontSize=14.sp)
-          Text(if(isScanning) "Android से वास्तविक उपलब्ध डिवाइस आँकड़े पढ़े जा रहे हैं।" else "स्कैन आपके फोन के उपलब्ध सिस्टम आँकड़े पढ़ता है; यह malware या हर hardware की पूर्ण जाँच नहीं है।", color=Secondary, fontSize=12.sp)
-          if(isScanning) { Spacer(Modifier.height(8.dp)); LinearProgressIndicator(progress={scanProgress/100f}, modifier=Modifier.fillMaxWidth(), color=Mint, trackColor=Border); Text("$scanProgress% • कृपया प्रतीक्षा करें",fontSize=11.sp,color=Secondary) }
+        Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
+         Row(verticalAlignment=Alignment.CenterVertically) {
+          Icon(Icons.Default.FactCheck,null,tint=Mint,modifier=Modifier.size(28.dp))
+          Spacer(Modifier.width(10.dp))
+          Column(Modifier.weight(1f)) {
+           Text(if(isScanning) "Scanning device…" else "Scan Progress",fontWeight=FontWeight.Bold,color=DeepGreen,fontSize=16.sp)
+           Text(lastScan,color=Secondary,fontSize=12.sp)
+          }
          }
-         Button(onClick={startDeviceScan()},enabled=!isScanning,colors=ButtonDefaults.buttonColors(containerColor=Mint)) {
+         LinearProgressIndicator(progress={scanProgress/100f},modifier=Modifier.fillMaxWidth(),color=Mint,trackColor=Border)
+         Text("$scanProgress% complete",fontSize=12.sp,color=Secondary)
+         Button(onClick={startDeviceScan()},enabled=!isScanning,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Mint)) {
           if(isScanning) CircularProgressIndicator(modifier=Modifier.size(18.dp),strokeWidth=2.dp,color=Color.White) else Icon(Icons.Default.Refresh,null)
-          Spacer(Modifier.width(4.dp)); Text(if(isScanning) "जाँच जारी…" else "स्कैन शुरू करें")
+          Spacer(Modifier.width(8.dp)); Text(if(isScanning) "Scanning…" else "Start Scan")
          }
         }
        }
       }
-      item { DeviceHero(snapshot,onScan={selected=1;startDeviceScan()}) }
+      item { Text("Generated Report",fontSize=19.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen) }
+      items(issues) { issue ->
+       IssueCard(issue,context)
+      }
       item { DeviceMetrics(snapshot) }
-      item { Text("Scan Results",fontSize=19.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen) }
-      items(issues) { IssueCard(it,context) }
-      item { Text("Limitations: a standard Android app can read selected metrics such as battery, RAM and storage, but cannot guarantee a complete hardware or malware scan.",fontSize=12.sp,color=Secondary) }
+      item { Text("Note: system metrics update during the scan. This is not a complete malware scan or a full functional test of every hardware component.",fontSize=12.sp,color=Secondary) }
      }
      2 -> {
       item { PageHeading("System Tools","Branded shortcuts to Android system settings") }
@@ -348,10 +349,10 @@ private fun PhoneDoctorApp(context: Context) {
       item { ReportRow("डिवाइस",snapshot.displayName) }
       item { ReportRow("Android","Version ${snapshot.android} • API ${snapshot.sdk}") }
       item { ReportRow("RAM", "${formatMb(snapshot.ramTotal-snapshot.ramAvailable)} उपयोग / ${formatMb(snapshot.ramTotal)} कुल (${snapshot.ramUsedPercent}%)") }
-      item { ReportRow("स्टोरेज","${formatMb(snapshot.storageTotal-snapshot.storageFree)} उपयोग / ${formatMb(snapshot.storageTotal)} कुल (${snapshot.storageUsedPercent}%)") }
-      item { ReportRow("बैटरी"," ${snapshot.batteryPercent?.let{"$it%"} ?: "उपलब्ध नहीं"} • ${snapshot.batteryHealth}${snapshot.batteryTempC?.let{" • $it°C"} ?: ""}") }
-      item { ReportRow("चार्जिंग",if(snapshot.charging)"हाँ" else "नहीं / स्थिति उपलब्ध नहीं") }
-      item { ReportRow("नेटवर्क",snapshot.network) }
+      item { ReportRow("Storage","${formatMb(snapshot.storageTotal-snapshot.storageFree)} उपयोग / ${formatMb(snapshot.storageTotal)} कुल (${snapshot.storageUsedPercent}%)") }
+      item { ReportRow("Battery"," ${snapshot.batteryPercent?.let{"$it%"} ?: "उपलब्ध नहीं"} • ${snapshot.batteryHealth}${snapshot.batteryTempC?.let{" • $it°C"} ?: ""}") }
+      item { ReportRow("चार्जिंग",if(snapshot.charging)"Yes" else "No / status unavailable") }
+      item { ReportRow("Network",snapshot.network) }
       item { Button(onClick={startDeviceScan()},enabled=!isScanning,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Mint)){Icon(Icons.Default.Refresh,null);Spacer(Modifier.width(8.dp));Text(if(isScanning) "जाँच जारी है…" else "रिपोर्ट रीफ़्रेश / स्कैन करें")} }
      }
      else -> {
