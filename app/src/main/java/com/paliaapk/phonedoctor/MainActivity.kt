@@ -277,44 +277,11 @@ private fun PhoneDoctorApp(context: Context) {
     when(selected) {
      0 -> {
       item { DeviceHero(snapshot,onScan=null) }
+      item { DeviceMetrics(snapshot) }
+      item { Text("Device information updates from Android system readings.",fontSize=12.sp,color=Secondary) }
      }
      1 -> {
-      
-      item { PageHeading("Device Scan","Hardware, battery, RAM, storage and security overview") }
-      item {
-       Card(colors=CardDefaults.cardColors(containerColor=Color.White),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,Border)) {
-        Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-         Text("Hardware Diagnostics",fontWeight=FontWeight.Bold,color=DeepGreen,fontSize=16.sp)
-         Text("Hardware features and sensors reported by Android. This does not fully test camera or microphone functionality.",fontSize=12.sp,color=Secondary)
-         hardwareChecks(context).forEach { (name, result) ->
-          Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
-           Icon(Icons.Default.Memory,null,tint=Mint,modifier=Modifier.size(18.dp))
-           Spacer(Modifier.width(8.dp))
-           Text(name,modifier=Modifier.weight(1f),fontSize=13.sp,color=DeepGreen)
-           Text(result,fontSize=12.sp,color=Secondary)
-          }
-         }
-        }
-       }
-      }
-      item {
-       Card(colors=CardDefaults.cardColors(containerColor=PaleMint),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,Border)) {
-        Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-         Row(verticalAlignment=Alignment.CenterVertically) {
-          Icon(Icons.Default.Security,null,tint=Mint,modifier=Modifier.size(26.dp))
-          Spacer(Modifier.width(8.dp))
-          Column {
-           Text("Malware & Virus Protection",fontWeight=FontWeight.Bold,color=DeepGreen,fontSize=16.sp)
-           Text("Run a scan with Google Play Protect or your phone security settings.",fontSize=12.sp,color=Secondary)
-          }
-         }
-         Text("Android does not allow this app to scan other apps’ private files or certify the entire phone as malware-free. No fake clean result is shown.",fontSize=12.sp,color=Secondary)
-         Button(onClick={openSecuritySettings(context)},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Mint)) {
-          Icon(Icons.Default.Security,null); Spacer(Modifier.width(8.dp)); Text("Open Security Settings")
-         }
-        }
-       }
-      }
+      item { PageHeading("Device Scan","Start a scan to generate a live report") }
       item {
        Card(colors=CardDefaults.cardColors(containerColor=PaleMint),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,Border)) {
         Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
@@ -335,12 +302,39 @@ private fun PhoneDoctorApp(context: Context) {
         }
        }
       }
-      item { Text("Generated Report",fontSize=19.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen) }
-      items(issues.take(reportVisibleCount)) { issue ->
-       IssueCard(issue,context)
+      item { Text("Scan Checks",fontSize=19.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen) }
+      item { Text("Each step runs in sequence. Results appear as checks finish.",fontSize=12.sp,color=Secondary) }
+      items(issues.take(reportVisibleCount)) { issue -> IssueCard(issue,context) }
+      if(reportVisibleCount>0) {
+       item {
+        Card(colors=CardDefaults.cardColors(containerColor=Color.White),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,Border)) {
+         Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+          Text("Hardware Diagnostics",fontWeight=FontWeight.Bold,color=DeepGreen,fontSize=16.sp)
+          Text("Hardware features reported by Android. Availability does not confirm that each component works correctly.",fontSize=12.sp,color=Secondary)
+          hardwareChecks(context).forEach { (name,result) ->
+           Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
+            Icon(Icons.Default.Memory,null,tint=Mint,modifier=Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(name,modifier=Modifier.weight(1f),fontSize=13.sp,color=DeepGreen)
+            Text(result,fontSize=12.sp,color=Secondary)
+           }
+          }
+         }
+        }
+       }
+       item {
+        Card(colors=CardDefaults.cardColors(containerColor=PaleMint),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,Border)) {
+         Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+          Text("Malware & Virus Protection",fontWeight=FontWeight.Bold,color=DeepGreen,fontSize=16.sp)
+          Text("For malware scanning, use Google Play Protect or Android Security Settings. This app cannot scan other apps’ private files.",fontSize=12.sp,color=Secondary)
+          Button(onClick={openSecuritySettings(context)},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Mint)) {
+           Icon(Icons.Default.Security,null); Spacer(Modifier.width(8.dp)); Text("Open Security Settings")
+          }
+         }
+        }
+       }
+       item { Text("Device metrics are refreshed during the scan. This is not a full malware scan or complete functional test of every component.",fontSize=12.sp,color=Secondary) }
       }
-      item { DeviceMetrics(snapshot) }
-      item { Text("Note: system metrics update during the scan. This is not a complete malware scan or a full functional test of every hardware component.",fontSize=12.sp,color=Secondary) }
      }
      2 -> {
       item { PageHeading("System Tools","Branded shortcuts to Android system settings") }
