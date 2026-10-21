@@ -165,7 +165,6 @@ private fun openSystemPage(context: Context, page: String) {
  catch (_: Exception) { context.startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
 }
 
-@Composable
 private data class PermissionItem(val permission: String, val title: String, val reason: String)
 
 @Composable
@@ -198,6 +197,7 @@ private fun PermissionSetupPage(item: PermissionItem?, onAllow: (String) -> Unit
  }
 }
 
+@Composable
 private fun PhoneDoctorApp(context: Context) {
  var showSplash by remember { mutableStateOf(true) }
  LaunchedEffect(Unit) { delay(1500); showSplash = false }
