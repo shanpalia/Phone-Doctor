@@ -145,11 +145,30 @@ private fun PhoneDoctorApp(context: Context) {
  var selected by remember { mutableIntStateOf(0) }
  var refreshKey by remember { mutableIntStateOf(0) }
  var lastScan by remember { mutableStateOf("अभी स्कैन नहीं हुआ") }
+ var isScanning by remember { mutableStateOf(false) }
+ var scanProgress by remember { mutableIntStateOf(0) }
  var versionStatus by remember { mutableStateOf("अपडेट जाँचने के लिए बटन दबाएँ") }
  var latestVersion by remember { mutableStateOf<String?>(null) }
  var updateUrl by remember { mutableStateOf<String?>(null) }
  var versionChecking by remember { mutableStateOf(false) }
  val scope = rememberCoroutineScope()
+ fun startDeviceScan() {
+  if (isScanning) return
+  isScanning = true
+  scanProgress = 0
+  lastScan = "डिवाइस की जाँच शुरू हो रही है…"
+  scope.launch {
+   val stages = listOf("बैटरी की जानकारी पढ़ रहे हैं…", "RAM की उपलब्धता पढ़ रहे हैं…", "स्टोरेज का उपयोग जाँच रहे हैं…", "नेटवर्क और Android जानकारी अपडेट कर रहे हैं…")
+   stages.forEachIndexed { index, stage ->
+    lastScan = stage
+    delay(500)
+    refreshKey++
+    scanProgress = (index + 1) * 25
+   }
+   lastScan = "स्कैन पूरा • डिवाइस आँकड़े अपडेट हुए"
+   isScanning = false
+  }
+ }
  fun checkWebsiteVersion() {
   if (versionChecking) return
   versionChecking = true
@@ -188,19 +207,19 @@ private fun PhoneDoctorApp(context: Context) {
     val icons=listOf(Icons.Default.PhoneAndroid,Icons.Default.HealthAndSafety,Icons.Default.Build,Icons.Default.Assessment,Icons.Default.Settings)
     labels.forEachIndexed { i,label -> NavigationBarItem(selected=selected==i,onClick={
      selected=i
-     if(i==1){ refreshKey++; lastScan="स्कैन पूरा हुआ • अभी अपडेट किया" }
+     if(i==1){ startDeviceScan() }
     },icon={Icon(icons[i],label)},label={Text(label,fontSize=11.sp)}) }
    }
   }) { padding ->
    LazyColumn(Modifier.fillMaxSize().padding(padding),contentPadding=PaddingValues(16.dp),verticalArrangement=Arrangement.spacedBy(14.dp)) {
-    item { Header(onRefresh={refreshKey++;lastScan="स्कैन पूरा हुआ"}) }
+    item { Header(onRefresh={startDeviceScan()}) }
     when(selected) {
      0 -> {
-      item { DeviceHero(snapshot,onScan={selected=1;refreshKey++;lastScan="स्कैन पूरा हुआ • अभी अपडेट किया"}) }
+      item { DeviceHero(snapshot,onScan={selected=1;startDeviceScan()}) }
       item { DeviceMetrics(snapshot) }
       item { Row(verticalAlignment=Alignment.CenterVertically){Text("फोन की स्थिति",fontSize=19.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen,modifier=Modifier.weight(1f));Text(lastScan,fontSize=11.sp,color=Secondary)} }
       items(issues.take(4)) { IssueCard(it,context) }
-      item { ActionCard("पूरी जाँच देखें","RAM, स्टोरेज, बैटरी और मैनुअल सुरक्षा जाँच",Icons.Default.HealthAndSafety){selected=1;refreshKey++;lastScan="स्कैन पूरा हुआ"} }
+      item { ActionCard("पूरी जाँच देखें","RAM, स्टोरेज, बैटरी और मैनुअल सुरक्षा जाँच",Icons.Default.HealthAndSafety){selected=1;startDeviceScan()} }
      }
      1 -> {
       item { PageHeading("फोन स्कैन","वर्तमान सिस्टम आँकड़े दोबारा पढ़ें") }
@@ -211,15 +230,17 @@ private fun PhoneDoctorApp(context: Context) {
          Spacer(Modifier.width(10.dp))
          Column(Modifier.weight(1f)) {
           Text(lastScan, fontWeight=FontWeight.Bold, color=DeepGreen, fontSize=14.sp)
-          Text("डिवाइस के मौजूदा आँकड़े पढ़कर परिणाम नीचे दिखाए गए हैं।", color=Secondary, fontSize=12.sp)
+          Text(if(isScanning) "Android से वास्तविक उपलब्ध डिवाइस आँकड़े पढ़े जा रहे हैं।" else "स्कैन आपके फोन के उपलब्ध सिस्टम आँकड़े पढ़ता है; यह malware या हर hardware की पूर्ण जाँच नहीं है।", color=Secondary, fontSize=12.sp)
+          if(isScanning) { Spacer(Modifier.height(8.dp)); LinearProgressIndicator(progress={scanProgress/100f}, modifier=Modifier.fillMaxWidth(), color=Mint, trackColor=Border); Text("$scanProgress% • कृपया प्रतीक्षा करें",fontSize=11.sp,color=Secondary) }
          }
-         Button(onClick={refreshKey++;lastScan="स्कैन पूरा हुआ • अभी अपडेट किया"},colors=ButtonDefaults.buttonColors(containerColor=Mint)) {
-          Icon(Icons.Default.Refresh,null); Spacer(Modifier.width(4.dp)); Text("फिर स्कैन")
+         Button(onClick={startDeviceScan()},enabled=!isScanning,colors=ButtonDefaults.buttonColors(containerColor=Mint)) {
+          if(isScanning) CircularProgressIndicator(modifier=Modifier.size(18.dp),strokeWidth=2.dp,color=Color.White) else Icon(Icons.Default.Refresh,null)
+          Spacer(Modifier.width(4.dp)); Text(if(isScanning) "जाँच जारी…" else "स्कैन शुरू करें")
          }
         }
        }
       }
-      item { DeviceHero(snapshot,onScan={selected=1;refreshKey++;lastScan="स्कैन पूरा हुआ • अभी अपडेट किया"}) }
+      item { DeviceHero(snapshot,onScan={selected=1;startDeviceScan()}) }
       item { DeviceMetrics(snapshot) }
       item { Text("स्कैन परिणाम",fontSize=19.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen) }
       items(issues) { IssueCard(it,context) }
@@ -244,7 +265,7 @@ private fun PhoneDoctorApp(context: Context) {
       item { ReportRow("बैटरी"," ${snapshot.batteryPercent?.let{"$it%"} ?: "उपलब्ध नहीं"} • ${snapshot.batteryHealth}${snapshot.batteryTempC?.let{" • $it°C"} ?: ""}") }
       item { ReportRow("चार्जिंग",if(snapshot.charging)"हाँ" else "नहीं / स्थिति उपलब्ध नहीं") }
       item { ReportRow("नेटवर्क",snapshot.network) }
-      item { Button(onClick={refreshKey++;lastScan="स्कैन पूरा हुआ"},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Mint)){Icon(Icons.Default.Refresh,null);Spacer(Modifier.width(8.dp));Text("रिपोर्ट रीफ़्रेश करें")} }
+      item { Button(onClick={startDeviceScan()},enabled=!isScanning,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Mint)){Icon(Icons.Default.Refresh,null);Spacer(Modifier.width(8.dp));Text(if(isScanning) "जाँच जारी है…" else "रिपोर्ट रीफ़्रेश / स्कैन करें")} }
      }
      else -> {
       item { PageHeading("सेटिंग्स","Phone Doctor और सिस्टम विकल्प") }
@@ -304,7 +325,7 @@ private fun PhoneDoctorApp(context: Context) {
   Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
    Text("आपका Android फोन",color=Color(0xFFD2F5E7),fontSize=13.sp)
    Row(verticalAlignment=Alignment.CenterVertically) {
-    Icon(Icons.Default.PhoneAndroid,null,tint=Color(0xFF62E6B2),modifier=Modifier.size(38.dp));Spacer(Modifier.width(12.dp))
+    Image(painterResource(R.drawable.ic_phone_doctor),contentDescription="Phone Doctor",modifier=Modifier.size(44.dp));Spacer(Modifier.width(12.dp))
     Column(Modifier.weight(1f)){Text(s.displayName.ifBlank{"Android डिवाइस"},color=Color.White,fontWeight=FontWeight.Bold,fontSize=18.sp,maxLines=2,overflow=TextOverflow.Ellipsis);Text("Android ${s.android} • API ${s.sdk}",color=Color(0xFFD2F5E7),fontSize=12.sp)}
    }
    Row(verticalAlignment=Alignment.CenterVertically) {
