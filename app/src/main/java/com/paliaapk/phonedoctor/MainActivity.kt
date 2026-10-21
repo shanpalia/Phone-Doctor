@@ -13,6 +13,8 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.StatFs
 import android.provider.Settings
+import android.hardware.SensorManager
+import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
@@ -122,6 +124,29 @@ private fun findings(s: DeviceSnapshot): List<Finding> = buildList {
  add(Finding("सिस्टम अपडेट जाँचें", "यह ऐप update server से उपलब्ध अपडेट का दावा नहीं करता।", "मैनुअल जाँच", "Settings में System update खोलकर उपलब्ध अपडेट देखें।", "update"))
 }
 
+private fun hardwareChecks(context: Context): List<Pair<String, String>> {
+ val pm = context.packageManager
+ val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+ val sensors = sensorManager.getSensorList(android.hardware.Sensor.TYPE_ALL)
+ fun status(feature: String) = if (pm.hasSystemFeature(feature)) "उपलब्ध" else "डिवाइस में नहीं मिला"
+ return listOf(
+  "कैमरा हार्डवेयर" to status(PackageManager.FEATURE_CAMERA_ANY),
+  "फ्लैश" to status(PackageManager.FEATURE_CAMERA_FLASH),
+  "माइक्रोफोन" to status(PackageManager.FEATURE_MICROPHONE),
+  "टच/मोशन सेंसर" to if (sensors.isNotEmpty()) "${sensors.size} सेंसर Android को रिपोर्ट हुए" else "कोई सेंसर रिपोर्ट नहीं हुआ",
+  "फिंगरप्रिंट सेंसर" to status(PackageManager.FEATURE_FINGERPRINT),
+  "GPS / लोकेशन हार्डवेयर" to status(PackageManager.FEATURE_LOCATION_GPS)
+ )
+}
+
+private fun openSecuritySettings(context: Context) {
+ try {
+  context.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+ } catch (_: Exception) {
+  openSystemPage(context, "settings")
+ }
+}
+
 private fun openSystemPage(context: Context, page: String) {
  val intent = when(page) {
   "storage" -> Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS)
@@ -222,7 +247,41 @@ private fun PhoneDoctorApp(context: Context) {
       item { ActionCard("पूरी जाँच देखें","RAM, स्टोरेज, बैटरी और मैनुअल सुरक्षा जाँच",Icons.Default.HealthAndSafety){selected=1;startDeviceScan()} }
      }
      1 -> {
-      item { PageHeading("फोन स्कैन","वर्तमान सिस्टम आँकड़े दोबारा पढ़ें") }
+      item { PageHeading("फोन स्कैन","हार्डवेयर, बैटरी, RAM, स्टोरेज और सुरक्षा जाँच") }
+      item {
+       Card(colors=CardDefaults.cardColors(containerColor=Color.White),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,Border)) {
+        Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+         Text("हार्डवेयर जाँच",fontWeight=FontWeight.Bold,color=DeepGreen,fontSize=16.sp)
+         Text("Android द्वारा रिपोर्ट किए गए hardware features और sensors की वास्तविक जाँच। इससे कैमरा/माइक का पूरा कार्यात्मक परीक्षण नहीं होता।",fontSize=12.sp,color=Secondary)
+         hardwareChecks(context).forEach { (name, result) ->
+          Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
+           Icon(Icons.Default.Memory,null,tint=Mint,modifier=Modifier.size(18.dp))
+           Spacer(Modifier.width(8.dp))
+           Text(name,modifier=Modifier.weight(1f),fontSize=13.sp,color=DeepGreen)
+           Text(result,fontSize=12.sp,color=Secondary)
+          }
+         }
+        }
+       }
+      }
+      item {
+       Card(colors=CardDefaults.cardColors(containerColor=PaleMint),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,Border)) {
+        Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+         Row(verticalAlignment=Alignment.CenterVertically) {
+          Icon(Icons.Default.Security,null,tint=Mint,modifier=Modifier.size(26.dp))
+          Spacer(Modifier.width(8.dp))
+          Column {
+           Text("Malware / वायरस सुरक्षा",fontWeight=FontWeight.Bold,color=DeepGreen,fontSize=16.sp)
+           Text("Google Play Protect या फोन की सुरक्षा सेटिंग में स्कैन खोलें।",fontSize=12.sp,color=Secondary)
+          }
+         }
+         Text("Android ऐप को दूसरे ऐप्स की निजी फाइलों और पूरे फोन को अपने-आप वायरस स्कैन करने की अनुमति नहीं देता। इसलिए यहाँ नकली 'साफ़' परिणाम नहीं दिखाया जाता।",fontSize=12.sp,color=Secondary)
+         Button(onClick={openSecuritySettings(context)},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Mint)) {
+          Icon(Icons.Default.Security,null); Spacer(Modifier.width(8.dp)); Text("फोन की Security Settings खोलें")
+         }
+        }
+       }
+      }
       item {
        Card(colors=CardDefaults.cardColors(containerColor=PaleMint),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,Border)) {
         Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=Alignment.CenterVertically) {
