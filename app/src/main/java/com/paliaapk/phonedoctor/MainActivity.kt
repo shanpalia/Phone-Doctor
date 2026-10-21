@@ -243,28 +243,69 @@ private fun PhoneDoctorApp(context: Context) {
  fun checkWebsiteVersion() {
   if (versionChecking) return
   versionChecking = true
-  versionStatus = "Checking version at www.paliaapkhub.com…"
+  latestVersion = null
+  updateUrl = null
+  versionStatus = "Checking PaliaAPK HUB for updates…"
   scope.launch {
    val result = withContext(Dispatchers.IO) {
     try {
-     val connection = (URL("https://www.paliaapkhub.com/phone-doctor-version.json").openConnection() as HttpURLConnection).apply { requestMethod = "GET"; connectTimeout = 10000; readTimeout = 10000; setRequestProperty("Cache-Control", "no-cache") }
+     val connection = (URL("https://paliaapkhub.com/updates/updates.json").openConnection() as HttpURLConnection).apply {
+      requestMethod = "GET"
+      connectTimeout = 10000
+      readTimeout = 10000
+      useCaches = false
+      setRequestProperty("Cache-Control", "no-cache")
+      setRequestProperty("Accept", "application/json")
+     }
      try {
-      if (connection.responseCode !in 200..299) throw IllegalStateException("HTTP " + connection.responseCode)
-      val json = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
-      val versionName = json.optString("versionName", "")
-      val versionCode = json.optInt("versionCode", -1)
-      val download = json.optString("downloadUrl", "")
-      if (versionName.isBlank() || versionCode < 1 || download.isBlank()) throw IllegalStateException("Version file is missing required fields")
+      if (connection.responseCode !in 200..299) throw IllegalStateException("Update website returned HTTP " + connection.responseCode)
+      val root = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+      val apps = root.optJSONArray("apps") ?: throw IllegalStateException("Website update list is missing")
+      var app: JSONObject? = null
+      for (i in 0 until apps.length()) {
+       val candidate = apps.optJSONObject(i) ?: continue
+       if (candidate.optString("package_name").trim() == context.packageName) {
+        app = candidate
+        break
+       }
+      }
+      val entry = app ?: throw IllegalStateException("Phone Doctor update is not published on the website yet")
+      val latest = entry.optString("latest_version").trim()
+      val download = entry.optString("download_url").trim()
+      if (latest.isBlank() || download.isBlank()) throw IllegalStateException("Phone Doctor version or download link is missing")
       val info = context.packageManager.getPackageInfo(context.packageName, 0)
-      val installedCode = if (Build.VERSION.SDK_INT >= 28) info.longVersionCode.toInt() else info.versionCode
-      if (versionCode > installedCode) Triple("UPDATE", versionName, download) else Triple("CURRENT", versionName, download)
+      val current = info.versionName ?: "1.0.1"
+      fun compareVersions(a: String, b: String): Int {
+       val av = a.removePrefix("v").split(".", "-", "_").map { it.toIntOrNull() ?: 0 }
+       val bv = b.removePrefix("v").split(".", "-", "_").map { it.toIntOrNull() ?: 0 }
+       for (i in 0 until maxOf(av.size, bv.size)) {
+        val left = av.getOrElse(i) { 0 }
+        val right = bv.getOrElse(i) { 0 }
+        if (left != right) return left.compareTo(right)
+       }
+       return 0
+      }
+      if (compareVersions(latest, current) > 0) Triple("UPDATE", latest, download)
+      else Triple("CURRENT", latest, "")
      } finally { connection.disconnect() }
     } catch (e: Exception) { Triple("ERROR", "", e.message ?: "Connection unavailable") }
    }
    when (result.first) {
-    "UPDATE" -> { latestVersion = result.second; updateUrl = result.third; versionStatus = "New version " + result.second + " is available. Installed version: " + (context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.1") + "." }
-    "CURRENT" -> { latestVersion = result.second; updateUrl = null; versionStatus = "Your app is up to date • Latest version " + result.second }
-    else -> versionStatus = "Could not verify version. Check your internet connection and website version file. (" + result.third + ")"
+    "UPDATE" -> {
+     latestVersion = result.second
+     updateUrl = result.third
+     versionStatus = "New version " + result.second + " is available. Installed version: " + (context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.1") + "."
+    }
+    "CURRENT" -> {
+     latestVersion = null
+     updateUrl = null
+     versionStatus = "Your app is up to date • Latest version " + result.second
+    }
+    else -> {
+     latestVersion = null
+     updateUrl = null
+     versionStatus = "Update check failed: " + result.third
+    }
    }
    versionChecking = false
   }
@@ -440,7 +481,7 @@ private fun PhoneDoctorApp(context: Context) {
           Spacer(Modifier.width(8.dp)); Text(if(versionChecking)"Checking Website…" else "Check for Updates")
          }
          if(latestVersion!=null && updateUrl!=null) Button(onClick={try{context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(updateUrl)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))}catch(_:Exception){}},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(14.dp),colors=ButtonDefaults.buttonColors(containerColor=DeepGreen)) { Icon(Icons.Default.Download,null); Spacer(Modifier.width(8.dp)); Text("Download Latest APK") }
-         Text("Update source: https://www.paliaapkhub.com/phone-doctor-version.json",fontSize=10.sp,color=Secondary)
+         Text("Update source: paliaapkhub.com/updates/updates.json",fontSize=10.sp,color=Secondary)
         }
        }
       }
