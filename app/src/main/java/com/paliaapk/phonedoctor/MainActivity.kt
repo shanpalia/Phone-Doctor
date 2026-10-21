@@ -268,7 +268,7 @@ private fun PhoneDoctorApp(context: Context) {
     val icons=listOf(Icons.Default.PhoneAndroid,Icons.Default.HealthAndSafety,Icons.Default.Build,Icons.Default.Assessment,Icons.Default.Settings)
     labels.forEachIndexed { i,label -> NavigationBarItem(selected=selected==i,onClick={
      selected=i
-     if(i==1){ startDeviceScan() }
+     
     },icon={Icon(icons[i],label)},label={Text(label,fontSize=11.sp)}) }
    }
   }) { padding ->
@@ -276,10 +276,10 @@ private fun PhoneDoctorApp(context: Context) {
     item { Header(onRefresh={startDeviceScan()}) }
     when(selected) {
      0 -> {
-      item { DeviceHero(snapshot,onScan={selected=1;startDeviceScan()}) }
+      item { DeviceHero(snapshot,onScan=null) }
      }
      1 -> {
-      item { DeviceHero(snapshot,onScan={startDeviceScan()}) }
+      
       item { PageHeading("Device Scan","Hardware, battery, RAM, storage and security overview") }
       item {
        Card(colors=CardDefaults.cardColors(containerColor=Color.White),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,Border)) {
