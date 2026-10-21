@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.net.Uri
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
@@ -16,6 +17,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -26,10 +28,17 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -136,6 +145,40 @@ private fun PhoneDoctorApp(context: Context) {
  var selected by remember { mutableIntStateOf(0) }
  var refreshKey by remember { mutableIntStateOf(0) }
  var lastScan by remember { mutableStateOf("अभी स्कैन नहीं हुआ") }
+ var versionStatus by remember { mutableStateOf("अपडेट जाँचने के लिए बटन दबाएँ") }
+ var latestVersion by remember { mutableStateOf<String?>(null) }
+ var updateUrl by remember { mutableStateOf<String?>(null) }
+ var versionChecking by remember { mutableStateOf(false) }
+ val scope = rememberCoroutineScope()
+ fun checkWebsiteVersion() {
+  if (versionChecking) return
+  versionChecking = true
+  versionStatus = "www.paliaapkhub.com से संस्करण जाँचा जा रहा है…"
+  scope.launch {
+   val result = withContext(Dispatchers.IO) {
+    try {
+     val connection = (URL("https://www.paliaapkhub.com/phone-doctor-version.json").openConnection() as HttpURLConnection).apply { requestMethod = "GET"; connectTimeout = 10000; readTimeout = 10000; setRequestProperty("Cache-Control", "no-cache") }
+     try {
+      if (connection.responseCode !in 200..299) throw IllegalStateException("HTTP " + connection.responseCode)
+      val json = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+      val versionName = json.optString("versionName", "")
+      val versionCode = json.optInt("versionCode", -1)
+      val download = json.optString("downloadUrl", "")
+      if (versionName.isBlank() || versionCode < 1 || download.isBlank()) throw IllegalStateException("Version file में आवश्यक fields नहीं हैं")
+      val info = packageManager.getPackageInfo(packageName, 0)
+      val installedCode = if (Build.VERSION.SDK_INT >= 28) info.longVersionCode.toInt() else @Suppress("DEPRECATION") info.versionCode
+      if (versionCode > installedCode) Triple("UPDATE", versionName, download) else Triple("CURRENT", versionName, download)
+     } finally { connection.disconnect() }
+    } catch (e: Exception) { Triple("ERROR", "", e.message ?: "कनेक्शन उपलब्ध नहीं") }
+   }
+   when (result.first) {
+    "UPDATE" -> { latestVersion = result.second; updateUrl = result.third; versionStatus = "नया संस्करण " + result.second + " उपलब्ध है। Installed version " + BuildConfig.VERSION_NAME + " है।" }
+    "CURRENT" -> { latestVersion = result.second; updateUrl = null; versionStatus = "आपका ऐप Up to date है • नवीनतम " + result.second }
+    else -> versionStatus = "वर्ज़न verify नहीं हो पाया। इंटरनेट और वेबसाइट की version file जाँचें। (" + result.third + ")"
+   }
+   versionChecking = false
+  }
+ }
  val snapshot = remember(refreshKey) { readDevice(context) }
  val issues = remember(snapshot) { findings(snapshot) }
  MaterialTheme(colorScheme = lightColorScheme(primary=Mint, onPrimary=Color.White, background=Page, surface=Color.White, onSurface=DeepGreen, secondary=Secondary)) {
@@ -153,7 +196,7 @@ private fun PhoneDoctorApp(context: Context) {
     item { Header(onRefresh={refreshKey++;lastScan="स्कैन पूरा हुआ"}) }
     when(selected) {
      0 -> {
-      item { DeviceHero(snapshot,onScan={refreshKey++;lastScan="स्कैन पूरा हुआ"}) }
+      item { DeviceHero(snapshot,onScan={selected=1;refreshKey++;lastScan="स्कैन पूरा हुआ • अभी अपडेट किया"}) }
       item { DeviceMetrics(snapshot) }
       item { Row(verticalAlignment=Alignment.CenterVertically){Text("फोन की स्थिति",fontSize=19.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen,modifier=Modifier.weight(1f));Text(lastScan,fontSize=11.sp,color=Secondary)} }
       items(issues.take(4)) { IssueCard(it,context) }
@@ -208,10 +251,21 @@ private fun PhoneDoctorApp(context: Context) {
       item { ActionCard("Android Settings","मुख्य सिस्टम सेटिंग्स खोलें",Icons.Default.Settings){openSystemPage(context,"settings")} }
       item { ActionCard("App permissions","Privacy और Permission Manager खोलें",Icons.Default.Security){openSystemPage(context,"permissions")} }
       item { ActionCard("App info","Phone Doctor की Android app info",Icons.Default.Info){try{context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(android.net.Uri.parse("package:"+context.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))}catch(_:Exception){openSystemPage(context,"settings")}} }
-      item { ReportRow("ऐप संस्करण","1.0.0") }
+      item { ReportRow("ऐप संस्करण",BuildConfig.VERSION_NAME) }
       item { ReportRow("Package","com.paliaapk.phonedoctor") }
       item { ReportRow("ब्रांड","By PaliaAPK HUB") }
       item { ReportRow("डेवलपर","Developer By shanpalia") }
+      item {
+       Card(shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=Color.White),border=BorderStroke(1.dp,Border)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
+         Row(verticalAlignment=Alignment.CenterVertically) { Icon(Icons.Default.SystemUpdate,null,tint=Mint,modifier=Modifier.size(28.dp)); Spacer(Modifier.width(10.dp)); Column(Modifier.weight(1f)) { Text("Check APK System Version",fontSize=16.sp,fontWeight=FontWeight.Bold,color=DeepGreen); Text("www.paliaapkhub.com से नवीनतम संस्करण verify करें",fontSize=12.sp,color=Secondary) } }
+         Text(versionStatus,fontSize=13.sp,color=if(versionStatus.startsWith("नया संस्करण")) Mint else DeepGreen)
+         Button(onClick={checkWebsiteVersion()},enabled=!versionChecking,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Mint)) { if(versionChecking) CircularProgressIndicator(modifier=Modifier.size(18.dp),strokeWidth=2.dp,color=Color.White) else Icon(Icons.Default.Refresh,null); Spacer(Modifier.width(8.dp)); Text(if(versionChecking)"जाँच जारी है…" else "Check Version") }
+         if(latestVersion!=null && updateUrl!=null) Button(onClick={try{context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(updateUrl)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))}catch(_:Exception){}},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=DeepGreen)) { Icon(Icons.Default.Download,null); Spacer(Modifier.width(8.dp)); Text("नया APK देखें / डाउनलोड करें") }
+         Text("Website version file: /phone-doctor-version.json",fontSize=11.sp,color=Secondary)
+        }
+       }
+      }
      }
     }
     item { Spacer(Modifier.height(8.dp)) }
@@ -222,7 +276,7 @@ private fun PhoneDoctorApp(context: Context) {
 
 @Composable private fun Header(onRefresh:()->Unit) {
  Row(verticalAlignment=Alignment.CenterVertically,modifier=Modifier.fillMaxWidth()) {
-  Box(Modifier.size(52.dp).background(PaleMint,RoundedCornerShape(16.dp)),contentAlignment=Alignment.Center){Icon(Icons.Default.HealthAndSafety,null,tint=Mint,modifier=Modifier.size(36.dp))}
+  Box(Modifier.size(52.dp).background(PaleMint,RoundedCornerShape(16.dp)),contentAlignment=Alignment.Center){Image(painterResource(R.drawable.ic_phone_doctor),contentDescription="Phone Doctor icon",modifier=Modifier.size(48.dp))}
   Spacer(Modifier.width(12.dp))
   Column(Modifier.weight(1f)) {
    Text("Phone Doctor",fontSize=23.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen)
@@ -235,7 +289,7 @@ private fun PhoneDoctorApp(context: Context) {
 @Composable private fun BrandingSplash() {
  Surface(Modifier.fillMaxSize(),color=Page) {
   Column(Modifier.fillMaxSize().padding(28.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center) {
-   Box(Modifier.size(116.dp).background(PaleMint,RoundedCornerShape(32.dp)),contentAlignment=Alignment.Center){Icon(Icons.Default.HealthAndSafety,null,tint=Mint,modifier=Modifier.size(82.dp))}
+   Box(Modifier.size(116.dp).background(PaleMint,RoundedCornerShape(32.dp)),contentAlignment=Alignment.Center){Image(painterResource(R.drawable.ic_phone_doctor),contentDescription="Phone Doctor icon",modifier=Modifier.size(108.dp))}
    Spacer(Modifier.height(26.dp));Text("Phone Doctor",fontSize=32.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen)
    Spacer(Modifier.height(6.dp));Text("By PaliaAPK HUB",fontSize=18.sp,fontWeight=FontWeight.Bold,color=Mint)
    Spacer(Modifier.height(8.dp));Text("आपके फोन की सेहत, अब आपकी हथेली में",fontSize=14.sp,color=Secondary)
