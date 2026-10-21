@@ -416,17 +416,17 @@ private fun PhoneDoctorApp(context: Context) {
  }
 }
 @Composable private fun PageHeading(title:String,subtitle:String){Column(verticalArrangement=Arrangement.spacedBy(4.dp)){Text(title,fontSize=22.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen);Text(subtitle,fontSize=13.sp,color=Secondary)}}
-@Composable private fun DeviceHero(s:DeviceSnapshot,onScan:()->Unit) {
+@Composable private fun DeviceHero(s:DeviceSnapshot,onScan:(()->Unit)? = null) {
  Card(colors=CardDefaults.cardColors(containerColor=DeepGreen),shape=RoundedCornerShape(24.dp)) {
   Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
-   Text("आपका Android फोन",color=Color(0xFFD2F5E7),fontSize=13.sp)
+   Text("YOUR ANDROID PHONE",color=Color(0xFFD2F5E7),fontSize=13.sp,fontWeight=FontWeight.SemiBold)
    Row(verticalAlignment=Alignment.CenterVertically) {
     Image(painterResource(R.drawable.ic_phone_doctor),contentDescription="Phone Doctor",modifier=Modifier.size(44.dp));Spacer(Modifier.width(12.dp))
-    Column(Modifier.weight(1f)){Text(s.displayName.ifBlank{"Android डिवाइस"},color=Color.White,fontWeight=FontWeight.Bold,fontSize=18.sp,maxLines=2,overflow=TextOverflow.Ellipsis);Text("Android ${s.android} • API ${s.sdk}",color=Color(0xFFD2F5E7),fontSize=12.sp)}
+    Column(Modifier.weight(1f)){Text(s.displayName.ifBlank{"Android Device"},color=Color.White,fontWeight=FontWeight.Bold,fontSize=18.sp,maxLines=2,overflow=TextOverflow.Ellipsis);Text("Android ${s.android} • API ${s.sdk}",color=Color(0xFFD2F5E7),fontSize=12.sp)}
    }
    Row(verticalAlignment=Alignment.CenterVertically) {
-    Text(if(s.batteryPercent==null)"बैटरी डेटा उपलब्ध नहीं" else "बैटरी ${s.batteryPercent}%"+if(s.charging)" • चार्ज हो रहा है" else "",color=Color.White,fontSize=13.sp,modifier=Modifier.weight(1f))
-    Button(onClick=onScan,colors=ButtonDefaults.buttonColors(containerColor=Mint)){Icon(Icons.Default.Refresh,null);Spacer(Modifier.width(5.dp));Text("स्कैन")}
+    Text(if(s.batteryPercent==null)"Battery data unavailable" else "Battery ${s.batteryPercent}%"+if(s.charging)" • Charging" else "",color=Color.White,fontSize=13.sp,modifier=Modifier.weight(1f))
+    if(onScan != null) Button(onClick=onScan,colors=ButtonDefaults.buttonColors(containerColor=Mint)){Icon(Icons.Default.Refresh,null);Spacer(Modifier.width(5.dp));Text("Scan")}
    }
   }
  }
@@ -434,8 +434,8 @@ private fun PhoneDoctorApp(context: Context) {
 @Composable private fun DeviceMetrics(s:DeviceSnapshot) {
  Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
   Text("Device Information",fontSize=18.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen)
-  Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){MetricCard("RAM","${formatMb(s.ramTotal-s.ramAvailable)} / ${formatMb(s.ramTotal)}",Icons.Default.Memory,Modifier.weight(1f),"${s.ramUsedPercent}% अनुमानित उपयोग");MetricCard("स्टोरेज","${formatMb(s.storageTotal-s.storageFree)} / ${formatMb(s.storageTotal)}",Icons.Default.Storage,Modifier.weight(1f),"${s.storageUsedPercent}% उपयोग")}
-  Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){MetricCard("बैटरी",s.batteryPercent?.let{"$it%"}?:"N/A",Icons.Default.BatteryFull,Modifier.weight(1f),s.batteryHealth);MetricCard("नेटवर्क",s.network,Icons.Default.Wifi,Modifier.weight(1f),"वर्तमान कनेक्शन")}
+  Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){MetricCard("RAM","${formatMb(s.ramTotal-s.ramAvailable)} / ${formatMb(s.ramTotal)}",Icons.Default.Memory,Modifier.weight(1f),"${s.ramUsedPercent}% अनुमानित उपयोग");MetricCard("Storage","${formatMb(s.storageTotal-s.storageFree)} / ${formatMb(s.storageTotal)}",Icons.Default.Storage,Modifier.weight(1f),"${s.storageUsedPercent}% उपयोग")}
+  Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){MetricCard("Battery",s.batteryPercent?.let{"$it%"}?:"N/A",Icons.Default.BatteryFull,Modifier.weight(1f),s.batteryHealth);MetricCard("Network",s.network,Icons.Default.Wifi,Modifier.weight(1f),"वर्तमान कनेक्शन")}
   if(s.batteryTempC!=null) Text("बैटरी तापमान: ${String.format(Locale.getDefault(),"%.1f",s.batteryTempC)}°C",fontSize=12.sp,color=Secondary)
  }
 }
