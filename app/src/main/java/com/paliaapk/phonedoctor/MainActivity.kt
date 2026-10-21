@@ -104,11 +104,11 @@ private fun readDevice(context: Context): DeviceSnapshot {
   caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "Mobile Data"
   caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> "Ethernet"
   caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN) -> "VPN"
-  else -> "कनेक्टेड"
+  else -> "Connected"
  }
  return DeviceSnapshot(
   Build.MANUFACTURER.orEmpty().replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
-  Build.MODEL.orEmpty(), Build.VERSION.RELEASE ?: "अज्ञात", Build.VERSION.SDK_INT,
+  Build.MODEL.orEmpty(), Build.VERSION.RELEASE ?: "Unknown", Build.VERSION.SDK_INT,
   mem.totalMem/(1024L*1024L), mem.availMem/(1024L*1024L),
   stat.totalBytes/(1024L*1024L), stat.availableBytes/(1024L*1024L),
   battery, temp, health, charging, network
@@ -121,7 +121,7 @@ private fun findings(s: DeviceSnapshot): List<Finding> = buildList {
  if (s.ramUsedPercent >= 90) add(Finding("High RAM Usage", "${s.ramUsedPercent}% RAM usage is reported.", "Attention", "Memory usage changes over time. Close recent apps or restart the phone if needed.", "memory"))
  if (s.batteryPercent != null && s.batteryPercent <= 15) add(Finding("Low Battery", "Battery is at ${s.batteryPercent}%.", "Low battery", "Connect a charger or enable Battery Saver.", "battery"))
  if (s.batteryTempC != null && s.batteryTempC >= 45f) add(Finding("High Battery Temperature", "Battery temperature is ${String.format(Locale.getDefault(), "%.1f", s.batteryTempC)}°C.", "Heat", "Stop charging, close demanding apps, and move the phone to a cool place. Do not refrigerate it.", "battery"))
- if (s.batteryHealth == "बहुत गर्म" || s.batteryHealth == "बैटरी खराब" || s.batteryHealth == "वोल्टेज चेतावनी" || s.batteryHealth == "सिस्टम ने खराबी बताई") add(Finding("Battery Health Warning", "Android battery status: ${s.batteryHealth}", "Check required", "Contact the phone manufacturer’s service center.", "battery"))
+ if (s.batteryHealth == "Overheating" || s.batteryHealth == "Battery failure" || s.batteryHealth == "Voltage warning" || s.batteryHealth == "System-reported failure") add(Finding("Battery Health Warning", "Android battery status: ${s.batteryHealth}", "Check required", "Contact the phone manufacturer’s service center.", "battery"))
  if (isEmpty()) add(Finding("No Critical Resource Alerts", "Current RAM, storage and battery thresholds were not exceeded. This is not a full hardware or malware certification.", "Normal", "Run checks periodically and keep apps and Android updated.", ""))
  add(Finding("Review App Permissions", "Android limits which app permissions can be inspected. This app does not claim to audit every app.", "Manual check", "Review camera, microphone, location and contacts in Permission Manager.", "permissions"))
  add(Finding("Check System Updates", "This app does not claim to detect available system updates automatically.", "Manual check", "Open System Update in Android Settings.", "update"))
@@ -245,17 +245,17 @@ private fun PhoneDoctorApp(context: Context) {
       val versionName = json.optString("versionName", "")
       val versionCode = json.optInt("versionCode", -1)
       val download = json.optString("downloadUrl", "")
-      if (versionName.isBlank() || versionCode < 1 || download.isBlank()) throw IllegalStateException("Version file में आवश्यक fields नहीं हैं")
+      if (versionName.isBlank() || versionCode < 1 || download.isBlank()) throw IllegalStateException("Version file is missing required fields")
       val info = context.packageManager.getPackageInfo(context.packageName, 0)
       val installedCode = if (Build.VERSION.SDK_INT >= 28) info.longVersionCode.toInt() else info.versionCode
       if (versionCode > installedCode) Triple("UPDATE", versionName, download) else Triple("CURRENT", versionName, download)
      } finally { connection.disconnect() }
-    } catch (e: Exception) { Triple("ERROR", "", e.message ?: "कनेक्शन उपलब्ध नहीं") }
+    } catch (e: Exception) { Triple("ERROR", "", e.message ?: "Connection unavailable") }
    }
    when (result.first) {
-    "UPDATE" -> { latestVersion = result.second; updateUrl = result.third; versionStatus = "नया संस्करण " + result.second + " उपलब्ध है। Installed version " + (context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.1") + " है।" }
-    "CURRENT" -> { latestVersion = result.second; updateUrl = null; versionStatus = "आपका ऐप Up to date है • नवीनतम " + result.second }
-    else -> versionStatus = "वर्ज़न verify नहीं हो पाया। इंटरनेट और वेबसाइट की version file जाँचें। (" + result.third + ")"
+    "UPDATE" -> { latestVersion = result.second; updateUrl = result.third; versionStatus = "New version " + result.second + " is available. Installed version: " + (context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.1") + "." }
+    "CURRENT" -> { latestVersion = result.second; updateUrl = null; versionStatus = "Your app is up to date • Latest version " + result.second }
+    else -> versionStatus = "Could not verify version. Check your internet connection and website version file. (" + result.third + ")"
    }
    versionChecking = false
   }
@@ -413,7 +413,7 @@ private fun PhoneDoctorApp(context: Context) {
    Text("By PaliaAPK HUB",fontSize=13.sp,color=Mint,fontWeight=FontWeight.Bold)
    Text("Developer By shanpalia",fontSize=11.sp,color=Secondary)
   }
-  IconButton(onClick=onRefresh){Icon(Icons.Default.Refresh,"रिफ्रेश",tint=Mint)}
+  IconButton(onClick=onRefresh){Icon(Icons.Default.Refresh,"Refresh",tint=Mint)}
  }
 }
 @Composable private fun BrandingSplash() {
@@ -447,9 +447,9 @@ private fun PhoneDoctorApp(context: Context) {
 @Composable private fun DeviceMetrics(s:DeviceSnapshot) {
  Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
   Text("Device Information",fontSize=18.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen)
-  Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){MetricCard("RAM","${formatMb(s.ramTotal-s.ramAvailable)} / ${formatMb(s.ramTotal)}",Icons.Default.Memory,Modifier.weight(1f),"${s.ramUsedPercent}% अनुमानित उपयोग");MetricCard("Storage","${formatMb(s.storageTotal-s.storageFree)} / ${formatMb(s.storageTotal)}",Icons.Default.Storage,Modifier.weight(1f),"${s.storageUsedPercent}% उपयोग")}
-  Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){MetricCard("Battery",s.batteryPercent?.let{"$it%"}?:"N/A",Icons.Default.BatteryFull,Modifier.weight(1f),s.batteryHealth);MetricCard("Network",s.network,Icons.Default.Wifi,Modifier.weight(1f),"वर्तमान कनेक्शन")}
-  if(s.batteryTempC!=null) Text("बैटरी तापमान: ${String.format(Locale.getDefault(),"%.1f",s.batteryTempC)}°C",fontSize=12.sp,color=Secondary)
+  Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){MetricCard("RAM","${formatMb(s.ramTotal-s.ramAvailable)} / ${formatMb(s.ramTotal)}",Icons.Default.Memory,Modifier.weight(1f),"${s.ramUsedPercent}% estimated usage");MetricCard("Storage","${formatMb(s.storageTotal-s.storageFree)} / ${formatMb(s.storageTotal)}",Icons.Default.Storage,Modifier.weight(1f),"${s.storageUsedPercent}% used")}
+  Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){MetricCard("Battery",s.batteryPercent?.let{"$it%"}?:"N/A",Icons.Default.BatteryFull,Modifier.weight(1f),s.batteryHealth);MetricCard("Network",s.network,Icons.Default.Wifi,Modifier.weight(1f),"Current connection")}
+  if(s.batteryTempC!=null) Text("Battery temperature: ${String.format(Locale.getDefault(),"%.1f",s.batteryTempC)}°C",fontSize=12.sp,color=Secondary)
  }
 }
 @Composable private fun MetricCard(title:String,value:String,icon:ImageVector,modifier:Modifier,caption:String) {
@@ -460,7 +460,7 @@ private fun PhoneDoctorApp(context: Context) {
 @Composable private fun IssueCard(f:Finding,context:Context) {
  Card(shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=Color.White),border=BorderStroke(1.dp,Border)) {
   Column(Modifier.padding(14.dp),verticalArrangement=Arrangement.spacedBy(7.dp)) {
-   Row(verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(38.dp).background(PaleMint,CircleShape),contentAlignment=Alignment.Center){Icon(if(f.severity=="ध्यान दें"||f.severity=="गर्मी")Icons.Default.Warning else Icons.Default.HealthAndSafety,null,tint=Mint)};Spacer(Modifier.width(10.dp));Column(Modifier.weight(1f)){Text(f.title,fontWeight=FontWeight.Bold,color=DeepGreen,fontSize=14.sp);Text(f.severity,color=Mint,fontSize=11.sp)}}
+   Row(verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(38.dp).background(PaleMint,CircleShape),contentAlignment=Alignment.Center){Icon(if(f.severity=="Attention"||f.severity=="Heat")Icons.Default.Warning else Icons.Default.HealthAndSafety,null,tint=Mint)};Spacer(Modifier.width(10.dp));Column(Modifier.weight(1f)){Text(f.title,fontWeight=FontWeight.Bold,color=DeepGreen,fontSize=14.sp);Text(f.severity,color=Mint,fontSize=11.sp)}}
    Text(f.detail,color=Secondary,fontSize=12.sp)
    Text("Tip: ${f.fix}",color=DeepGreen,fontSize=12.sp)
    if(f.action.isNotBlank()) OutlinedButton(onClick={openSystemPage(context,f.action)},modifier=Modifier.fillMaxWidth(),border=BorderStroke(1.dp,Border)){Text("Open Related Android Settings",color=Mint)}
