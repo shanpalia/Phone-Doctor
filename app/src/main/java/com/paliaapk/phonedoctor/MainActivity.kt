@@ -117,28 +117,28 @@ private fun readDevice(context: Context): DeviceSnapshot {
 
 private data class Finding(val title: String, val detail: String, val severity: String, val fix: String, val action: String)
 private fun findings(s: DeviceSnapshot): List<Finding> = buildList {
- if (s.storageUsedPercent >= 90) add(Finding("स्टोरेज लगभग भर गया है", "${s.storageUsedPercent}% स्टोरेज उपयोग में है।", "ध्यान दें", "Storage Settings में बड़ी या अनचाही फाइलें जाँचें।", "storage"))
- if (s.ramUsedPercent >= 90) add(Finding("RAM उपयोग अधिक है", "${s.ramUsedPercent}% RAM उपयोग में दिखाई दे रही है।", "ध्यान दें", "Memory आँकड़ा बदलता रहता है; हाल के ऐप्स बंद करें और फोन की जरूरत हो तो restart करें।", "memory"))
- if (s.batteryPercent != null && s.batteryPercent <= 15) add(Finding("बैटरी कम है", "बैटरी ${s.batteryPercent}% है।", "कम बैटरी", "चार्जर लगाएँ या Battery Saver चालू करें।", "battery"))
- if (s.batteryTempC != null && s.batteryTempC >= 45f) add(Finding("बैटरी तापमान अधिक", "बैटरी तापमान ${String.format(Locale.getDefault(), "%.1f", s.batteryTempC)}°C है।", "गर्मी", "चार्जिंग रोकें, गेम/भारी ऐप बंद करें और फोन को ठंडी जगह रखें। फ्रिज में न रखें।", "battery"))
- if (s.batteryHealth == "बहुत गर्म" || s.batteryHealth == "बैटरी खराब" || s.batteryHealth == "वोल्टेज चेतावनी" || s.batteryHealth == "सिस्टम ने खराबी बताई") add(Finding("बैटरी हेल्थ चेतावनी", "Android battery status: ${s.batteryHealth}", "जाँच जरूरी", "फोन का आधिकारिक service center जाँचें।", "battery"))
- if (isEmpty()) add(Finding("कोई गंभीर संसाधन चेतावनी नहीं", "मौजूदा स्कैन में निर्धारित RAM, storage या battery threshold पार नहीं हुआ। यह पूरे फोन का hardware या malware प्रमाणपत्र नहीं है।", "सामान्य", "समय-समय पर फिर स्कैन करें और ऐप/सिस्टम अपडेट रखें।", ""))
- add(Finding("ऐप अनुमतियाँ जाँचें", "Android ऐप्स की अनुमति सूची को OS और संस्करण सीमित करते हैं; इस ऐप ने सभी ऐप्स की permissions का दावा नहीं किया है।", "मैनुअल जाँच", "Permission Manager में camera, microphone, location और contacts की अनुमतियाँ देखें।", "permissions"))
- add(Finding("सिस्टम अपडेट जाँचें", "यह ऐप update server से उपलब्ध अपडेट का दावा नहीं करता।", "मैनुअल जाँच", "Settings में System update खोलकर उपलब्ध अपडेट देखें।", "update"))
+ if (s.storageUsedPercent >= 90) add(Finding("Storage Almost Full", "${s.storageUsedPercent}% of storage is in use.", "Attention", "Review large or unwanted files in Storage Settings.", "storage"))
+ if (s.ramUsedPercent >= 90) add(Finding("High RAM Usage", "${s.ramUsedPercent}% RAM usage is reported.", "Attention", "Memory usage changes over time. Close recent apps or restart the phone if needed.", "memory"))
+ if (s.batteryPercent != null && s.batteryPercent <= 15) add(Finding("Low Battery", "Battery is at ${s.batteryPercent}%.", "Low battery", "Connect a charger or enable Battery Saver.", "battery"))
+ if (s.batteryTempC != null && s.batteryTempC >= 45f) add(Finding("High Battery Temperature", "Battery temperature is ${String.format(Locale.getDefault(), "%.1f", s.batteryTempC)}°C.", "Heat", "Stop charging, close demanding apps, and move the phone to a cool place. Do not refrigerate it.", "battery"))
+ if (s.batteryHealth == "बहुत गर्म" || s.batteryHealth == "बैटरी खराब" || s.batteryHealth == "वोल्टेज चेतावनी" || s.batteryHealth == "सिस्टम ने खराबी बताई") add(Finding("Battery Health Warning", "Android battery status: ${s.batteryHealth}", "Check required", "Contact the phone manufacturer’s service center.", "battery"))
+ if (isEmpty()) add(Finding("No Critical Resource Alerts", "Current RAM, storage and battery thresholds were not exceeded. This is not a full hardware or malware certification.", "Normal", "Run checks periodically and keep apps and Android updated.", ""))
+ add(Finding("Review App Permissions", "Android limits which app permissions can be inspected. This app does not claim to audit every app.", "Manual check", "Review camera, microphone, location and contacts in Permission Manager.", "permissions"))
+ add(Finding("Check System Updates", "This app does not claim to detect available system updates automatically.", "Manual check", "Open System Update in Android Settings.", "update"))
 }
 
 private fun hardwareChecks(context: Context): List<Pair<String, String>> {
  val pm = context.packageManager
  val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
  val sensors = sensorManager.getSensorList(android.hardware.Sensor.TYPE_ALL)
- fun status(feature: String) = if (pm.hasSystemFeature(feature)) "उपलब्ध" else "डिवाइस में नहीं मिला"
+ fun status(feature: String) = if (pm.hasSystemFeature(feature)) "Available" else "Not detected"
  return listOf(
-  "कैमरा हार्डवेयर" to status(PackageManager.FEATURE_CAMERA_ANY),
-  "फ्लैश" to status(PackageManager.FEATURE_CAMERA_FLASH),
-  "माइक्रोफोन" to status(PackageManager.FEATURE_MICROPHONE),
-  "टच/मोशन सेंसर" to if (sensors.isNotEmpty()) "${sensors.size} सेंसर Android को रिपोर्ट हुए" else "कोई सेंसर रिपोर्ट नहीं हुआ",
-  "फिंगरप्रिंट सेंसर" to status(PackageManager.FEATURE_FINGERPRINT),
-  "GPS / लोकेशन हार्डवेयर" to status(PackageManager.FEATURE_LOCATION_GPS)
+  "Camera Hardware" to status(PackageManager.FEATURE_CAMERA_ANY),
+  "Flash" to status(PackageManager.FEATURE_CAMERA_FLASH),
+  "Microphone" to status(PackageManager.FEATURE_MICROPHONE),
+  "Motion Sensors" to if (sensors.isNotEmpty()) "${sensors.size} सेंसर Android को रिपोर्ट हुए" else "No sensors reported",
+  "Fingerprint Sensor" to status(PackageManager.FEATURE_FINGERPRINT),
+  "GPS / Location Hardware" to status(PackageManager.FEATURE_LOCATION_GPS)
  )
 }
 
@@ -270,7 +270,7 @@ private fun PhoneDoctorApp(context: Context) {
      0 -> {
       item { DeviceHero(snapshot,onScan={selected=1;startDeviceScan()}) }
       item { DeviceMetrics(snapshot) }
-      item { Row(verticalAlignment=Alignment.CenterVertically){Text("फोन की स्थिति",fontSize=19.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen,modifier=Modifier.weight(1f));Text(lastScan,fontSize=11.sp,color=Secondary)} }
+      item { Row(verticalAlignment=Alignment.CenterVertically){Text("Device Status",fontSize=19.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen,modifier=Modifier.weight(1f));Text(lastScan,fontSize=11.sp,color=Secondary)} }
       items(issues.take(4)) { IssueCard(it,context) }
       item { ActionCard("पूरी जाँच देखें","RAM, स्टोरेज, बैटरी और मैनुअल सुरक्षा जाँच",Icons.Default.HealthAndSafety){selected=1;startDeviceScan()} }
      }
@@ -424,7 +424,7 @@ private fun PhoneDoctorApp(context: Context) {
 }
 @Composable private fun DeviceMetrics(s:DeviceSnapshot) {
  Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
-  Text("डिवाइस जानकारी",fontSize=18.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen)
+  Text("Device Information",fontSize=18.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen)
   Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){MetricCard("RAM","${formatMb(s.ramTotal-s.ramAvailable)} / ${formatMb(s.ramTotal)}",Icons.Default.Memory,Modifier.weight(1f),"${s.ramUsedPercent}% अनुमानित उपयोग");MetricCard("स्टोरेज","${formatMb(s.storageTotal-s.storageFree)} / ${formatMb(s.storageTotal)}",Icons.Default.Storage,Modifier.weight(1f),"${s.storageUsedPercent}% उपयोग")}
   Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){MetricCard("बैटरी",s.batteryPercent?.let{"$it%"}?:"N/A",Icons.Default.BatteryFull,Modifier.weight(1f),s.batteryHealth);MetricCard("नेटवर्क",s.network,Icons.Default.Wifi,Modifier.weight(1f),"वर्तमान कनेक्शन")}
   if(s.batteryTempC!=null) Text("बैटरी तापमान: ${String.format(Locale.getDefault(),"%.1f",s.batteryTempC)}°C",fontSize=12.sp,color=Secondary)
@@ -440,8 +440,8 @@ private fun PhoneDoctorApp(context: Context) {
   Column(Modifier.padding(14.dp),verticalArrangement=Arrangement.spacedBy(7.dp)) {
    Row(verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(38.dp).background(PaleMint,CircleShape),contentAlignment=Alignment.Center){Icon(if(f.severity=="ध्यान दें"||f.severity=="गर्मी")Icons.Default.Warning else Icons.Default.HealthAndSafety,null,tint=Mint)};Spacer(Modifier.width(10.dp));Column(Modifier.weight(1f)){Text(f.title,fontWeight=FontWeight.Bold,color=DeepGreen,fontSize=14.sp);Text(f.severity,color=Mint,fontSize=11.sp)}}
    Text(f.detail,color=Secondary,fontSize=12.sp)
-   Text("सुझाव: ${f.fix}",color=DeepGreen,fontSize=12.sp)
-   if(f.action.isNotBlank()) OutlinedButton(onClick={openSystemPage(context,f.action)},modifier=Modifier.fillMaxWidth(),border=BorderStroke(1.dp,Border)){Text("संबंधित Android Settings खोलें",color=Mint)}
+   Text("Tip: ${f.fix}",color=DeepGreen,fontSize=12.sp)
+   if(f.action.isNotBlank()) OutlinedButton(onClick={openSystemPage(context,f.action)},modifier=Modifier.fillMaxWidth(),border=BorderStroke(1.dp,Border)){Text("Open Related Android Settings",color=Mint)}
   }
  }
 }
