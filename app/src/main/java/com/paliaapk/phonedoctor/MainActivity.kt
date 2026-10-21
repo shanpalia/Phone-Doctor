@@ -251,7 +251,7 @@ private fun PhoneDoctorApp(context: Context) {
       item { ActionCard("Android Settings","मुख्य सिस्टम सेटिंग्स खोलें",Icons.Default.Settings){openSystemPage(context,"settings")} }
       item { ActionCard("App permissions","Privacy और Permission Manager खोलें",Icons.Default.Security){openSystemPage(context,"permissions")} }
       item { ActionCard("App info","Phone Doctor की Android app info",Icons.Default.Info){try{context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(android.net.Uri.parse("package:"+context.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))}catch(_:Exception){openSystemPage(context,"settings")}} }
-      item { ReportRow("ऐप संस्करण",BuildConfig.VERSION_NAME) }
+      item { ReportRow("ऐप संस्करण",(context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.1")) }
       item { ReportRow("Package","com.paliaapk.phonedoctor") }
       item { ReportRow("ब्रांड","By PaliaAPK HUB") }
       item { ReportRow("डेवलपर","Developer By shanpalia") }
