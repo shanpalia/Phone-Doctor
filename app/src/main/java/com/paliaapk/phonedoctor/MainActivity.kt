@@ -201,6 +201,7 @@ private fun PhoneDoctorApp(context: Context) {
  var isScanning by remember { mutableStateOf(false) }
  var scanProgress by remember { mutableIntStateOf(0) }
  var reportVisibleCount by remember { mutableIntStateOf(0) }
+ var hardwareVisibleCount by remember { mutableIntStateOf(0) }
  var selectedHardware by remember { mutableStateOf<Pair<String, String>?>(null) }
  var versionStatus by remember { mutableStateOf("Tap Check Version to look for updates") }
  var latestVersion by remember { mutableStateOf<String?>(null) }
@@ -212,6 +213,7 @@ private fun PhoneDoctorApp(context: Context) {
   isScanning = true
   scanProgress = 0
   reportVisibleCount = 0
+  hardwareVisibleCount = 0
   lastScan = "Starting device diagnostics…"
   scope.launch {
    val stages = listOf("Reading battery information…", "Checking available RAM…", "Checking storage usage…", "Refreshing network and Android information…")
@@ -219,13 +221,20 @@ private fun PhoneDoctorApp(context: Context) {
     lastScan = stage
     delay(500)
     refreshKey++
-    scanProgress = (index + 1) * 25
+    scanProgress = (index + 1) * 15
    }
-   lastScan = "Scan complete • Generating report…"
+   val hardware = hardwareChecks(context)
+   hardware.forEachIndexed { index, check ->
+    lastScan = "Checking ${check.first}…"
+    delay(450)
+    hardwareVisibleCount = index + 1
+    scanProgress = 60 + ((index + 1) * 25 / hardware.size.coerceAtLeast(1))
+   }
+   lastScan = "Generating diagnostic report…"
    for (count in 1..8) {
-    delay(350)
+    delay(250)
     reportVisibleCount = count
-    scanProgress = 50 + (count * 50 / 8)
+    scanProgress = 85 + (count * 15 / 8)
    }
    lastScan = "Scan complete • Report generated"
    isScanning = false
@@ -303,26 +312,26 @@ private fun PhoneDoctorApp(context: Context) {
         }
        }
       }
-      item { Text("Scan Checks",fontSize=19.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen) }
-      item { Text("Each step runs in sequence. Results appear as checks finish.",fontSize=12.sp,color=Secondary) }
-      items(issues.take(reportVisibleCount)) { issue -> IssueCard(issue,context) }
-      if(reportVisibleCount>0) {
-       item {
-        Card(colors=CardDefaults.cardColors(containerColor=Color.White),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,Border)) {
-         Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-          Text("Hardware Diagnostics",fontWeight=FontWeight.Bold,color=DeepGreen,fontSize=16.sp)
-          Text("Hardware features reported by Android. Availability does not confirm that each component works correctly.",fontSize=12.sp,color=Secondary)
-          hardwareChecks(context).forEach { (name,result) ->
-           Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
-            Icon(Icons.Default.Memory,null,tint=Mint,modifier=Modifier.size(18.dp))
-            Spacer(Modifier.width(8.dp))
-            Text(name,modifier=Modifier.weight(1f),fontSize=13.sp,color=DeepGreen)
-            Text(result,fontSize=12.sp,color=Secondary)
-           }
+      item { Text("Hardware Diagnostics",fontSize=19.sp,fontWeight=FontWeight.ExtraBold,color=DeepGreen) }
+      item { Text("Checks appear one by one after you start the scan.",fontSize=12.sp,color=Secondary) }
+      if(hardwareVisibleCount>0) {
+       items(hardwareChecks(context).take(hardwareVisibleCount)) { check ->
+        val isOk = check.second == "Available" || (check.first == "Motion Sensors" && check.second != "No sensors reported")
+        Card(shape=RoundedCornerShape(14.dp),colors=CardDefaults.cardColors(containerColor=Color.White),border=BorderStroke(1.dp,Border)) {
+         Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically) {
+          Icon(if(isOk) Icons.Default.CheckCircle else Icons.Default.Error,null,tint=if(isOk) Color(0xFF16A34A) else Color(0xFFDC2626),modifier=Modifier.size(22.dp))
+          Spacer(Modifier.width(10.dp))
+          Column(Modifier.weight(1f)) {
+           Text(check.first,fontWeight=FontWeight.SemiBold,color=DeepGreen,fontSize=13.sp)
+           Text(check.second,fontSize=12.sp,color=if(isOk) Color(0xFF16A34A) else Color(0xFFDC2626))
           }
          }
         }
        }
+      }
+      if(reportVisibleCount>0) {
+       item { Text("Device Checks",fontSize=18.sp,fontWeight=FontWeight.Bold,color=DeepGreen) }
+       items(issues.take(reportVisibleCount)) { issue -> IssueCard(issue,context) }
        item {
         Card(colors=CardDefaults.cardColors(containerColor=PaleMint),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,Border)) {
          Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
