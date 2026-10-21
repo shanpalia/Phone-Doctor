@@ -166,7 +166,7 @@ private fun PhoneDoctorApp(context: Context) {
       val download = json.optString("downloadUrl", "")
       if (versionName.isBlank() || versionCode < 1 || download.isBlank()) throw IllegalStateException("Version file में आवश्यक fields नहीं हैं")
       val info = packageManager.getPackageInfo(packageName, 0)
-      val installedCode = if (Build.VERSION.SDK_INT >= 28) info.longVersionCode.toInt() else @Suppress("DEPRECATION") info.versionCode
+      val installedCode = if (Build.VERSION.SDK_INT >= 28) info.longVersionCode.toInt() else info.versionCode
       if (versionCode > installedCode) Triple("UPDATE", versionName, download) else Triple("CURRENT", versionName, download)
      } finally { connection.disconnect() }
     } catch (e: Exception) { Triple("ERROR", "", e.message ?: "कनेक्शन उपलब्ध नहीं") }
