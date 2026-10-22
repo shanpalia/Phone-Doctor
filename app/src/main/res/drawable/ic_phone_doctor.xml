@@ -4,14 +4,22 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:fillColor="#064E3B" android:pathData="M0,0h108v108h-108z"/>
-    <path android:fillColor="#087F5B" android:pathData="M18,0h72c10,0 18,8 18,18v72c0,10 -8,18 -18,18h-72c-10,0 -18,-8 -18,-18v-72c0,-10 8,-18 18,-18z"/>
-    <path android:fillColor="#FFFFFF" android:pathData="M34,12h40c7,0 12,5 12,12v60c0,7 -5,12 -12,12h-40c-7,0 -12,-5 -12,-12v-60c0,-7 5,-12 12,-12z"/>
-    <path android:fillColor="#064E3B" android:pathData="M39,18h30c2,0 3,1 3,3v2h-36v-2c0,-2 1,-3 3,-3z"/>
-    <path android:fillColor="#DDFBEF" android:pathData="M29,29h50v49h-50z"/>
-    <path android:fillColor="#08B978" android:pathData="M50,37h8v12h12v8h-12v12h-8v-12h-12v-8h12z"/>
-    <path android:fillColor="#064E3B" android:pathData="M50,84h8v3h-8z"/>
-    <path android:fillColor="#62E6B2" android:pathData="M77,62a17,17 0,1 1,0 34a17,17 0,1 1,0 -34z"/>
-    <path android:fillColor="#064E3B" android:pathData="M77,67a12,12 0,1 1,0 24a12,12 0,1 1,0 -24z"/>
-    <path android:fillColor="#FFFFFF" android:pathData="M74,73h6v3h-6zM75.5,71.5h3v6h-3z"/>
+    <!-- Premium blue Phone Doctor mark: phone, medical cross, ECG and stethoscope -->
+    <path android:fillColor="#061A52" android:pathData="M0,0h108v108h-108z"/>
+    <path android:fillColor="#073EAD" android:pathData="M18,0h72c10,0 18,8 18,18v72c0,10 -8,18 -18,18h-72c-10,0 -18,-8 -18,-18v-72c0,-10 8,-18 18,-18z"/>
+    <path android:fillColor="#0878F9" android:pathData="M12,9h84v4h-84z"/>
+    <path android:fillColor="#0A2D7C" android:pathData="M24,8h48c7,0 12,5 12,12v64c0,7 -5,12 -12,12h-48c-7,0 -12,-5 -12,-12v-64c0,-7 5,-12 12,-12z"/>
+    <path android:fillColor="#DDFBFF" android:pathData="M28,13h40c5,0 9,4 9,9v61c0,5 -4,9 -9,9h-40c-5,0 -9,-4 -9,-9v-61c0,-5 4,-9 9,-9z"/>
+    <path android:fillColor="#08B9F8" android:pathData="M27,18h42v57h-42z"/>
+    <path android:fillColor="#0875E8" android:pathData="M27,18h42v15h-42z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M43,34h10v12h12v10h-12v12h-10v-12h-12v-10h12z"/>
+    <path android:fillColor="#C4FFFF" android:pathData="M27,72h6l4,-7 5,13 6,-18 5,12h5l4,-7 4,7h3v4h-5l-2,-4 -4,7h-8l-3,-7 -5,15 -6,-14 -2,4h-7z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M12,23a5,5 0,1 1,10 0a5,5 0,1 1,-10 0zM10,33a5,5 0,1 1,10 0a5,5 0,1 1,-10 0z"/>
+    <path android:fillColor="#BCEBFF" android:pathData="M17,23c0,17 3,26 13,35l12,11l-4,5l-14,-13c-11,-10 -13,-22 -13,-38z"/>
+    <path android:fillColor="#0B54C5" android:pathData="M24,68a7,7 0,0 1,10 -3l9,8l-7,12l-10,-7a7,7 0,0 1,-2 -10z"/>
+    <path android:fillColor="#E8F8FF" android:pathData="M70,60a15,15 0,1 1,0 30a15,15 0,1 1,0 -30z"/>
+    <path android:fillColor="#8CEBFF" android:pathData="M70,64a11,11 0,1 1,0 22a11,11 0,1 1,0 -22z"/>
+    <path android:fillColor="#A9BFD8" android:pathData="M70,67a8,8 0,1 1,0 16a8,8 0,1 1,0 -16z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M67,70h6v3h-6zM68.5,68.5h3v6h-3z"/>
+    <path android:fillColor="#55F2FF" android:pathData="M7,96h94v2h-94z"/>
 </vector>
